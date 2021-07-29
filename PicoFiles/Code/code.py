@@ -33,11 +33,10 @@ tast07.pull = digitalio.Pull.DOWN
 
 # Set as USB Serial device
 keyboard = Keyboard.Keyboard(usb_hid.devices)
-
 key = Keycode.Keycode
 
 # Reset buttons flag
-restart = 10
+restart = 1
 
 # Whether or not to send pre-command keys (alt + 0)
 sendPreCommand = 1
@@ -46,9 +45,9 @@ sendPreCommand = 1
 def sendThePreCommand():
     if sendPreCommand == 1:
         keyboard.press(key.LEFT_ALT)
-        time.sleep(0.1)
+        time.sleep(0.02)
         keyboard.press(key.ZERO)
-        time.sleep(0.1)
+        time.sleep(0.02)
         keyboard.release_all()
         time.sleep(0.1)
 
@@ -185,14 +184,14 @@ set_var = g_var.readline()
 g_var.close()
 
 # Read and set buttons 1 to 8 from text files
-t1w1,t1w2,t1w3,t1w4 = inhaltLesen(set_var, "1")
-t2w1,t2w2,t2w3,t2w4 = inhaltLesen(set_var, "2")
-t3w1,t3w2,t3w3,t3w4 = inhaltLesen(set_var, "3")
-t4w1,t4w2,t4w3,t4w4 = inhaltLesen(set_var, "4")
-t5w1,t5w2,t5w3,t5w4 = inhaltLesen(set_var, "5")
-t6w1,t6w2,t6w3,t6w4 = inhaltLesen(set_var, "6")
-t7w1,t7w2,t7w3,t7w4 = inhaltLesen(set_var, "7")
-t8w1,t8w2,t8w3,t8w4 = inhaltLesen(set_var, "8")
+t1w1, t1w2, t1w3, t1w4 = inhaltLesen(set_var, "1")
+t2w1, t2w2, t2w3, t2w4 = inhaltLesen(set_var, "2")
+t3w1, t3w2, t3w3, t3w4 = inhaltLesen(set_var, "3")
+t4w1, t4w2, t4w3, t4w4 = inhaltLesen(set_var, "4")
+t5w1, t5w2, t5w3, t5w4 = inhaltLesen(set_var, "5")
+t6w1, t6w2, t6w3, t6w4 = inhaltLesen(set_var, "6")
+t7w1, t7w2, t7w3, t7w4 = inhaltLesen(set_var, "7")
+t8w1, t8w2, t8w3, t8w4 = inhaltLesen(set_var, "8")
 
 # Main part of program - set output
 while True:
@@ -201,7 +200,7 @@ while True:
 
         keyboard.press(t1w1)
         keyboard.press(t1w2)
-        time.sleep(0.1)
+        time.sleep(0.05)
         keyboard.press(t1w3)
         keyboard.press(t1w4)
         time.sleep(0.1)
@@ -213,10 +212,10 @@ while True:
 
         keyboard.press(t2w1)
         keyboard.press(t2w2)
-        time.sleep(0.1)
+        time.sleep(0.05)
         keyboard.press(t2w3)
         keyboard.press(t2w4)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
         print("Tast 2 - Reject Call")
         restart = 0
@@ -225,10 +224,10 @@ while True:
 
         keyboard.press(t3w1)
         keyboard.press(t3w2)
-        time.sleep(0.1)
+        time.sleep(0.05)
         keyboard.press(t3w3)
         keyboard.press(t3w4)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
         print("Tast 3 - Toggle Screen Share")
         restart = 0
@@ -237,10 +236,10 @@ while True:
 
         keyboard.press(t4w1)
         keyboard.press(t4w2)
-        time.sleep(0.1)
+        time.sleep(0.05)
         keyboard.press(t4w3)
         keyboard.press(t4w4)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
         print("Tast 4 - Raise and Lower Hand")
         restart = 0
@@ -249,10 +248,10 @@ while True:
 
         keyboard.press(t5w1)
         keyboard.press(t5w2)
-        time.sleep(0.1)
+        time.sleep(0.05)
         keyboard.press(t5w3)
         keyboard.press(t5w4)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
         print("Tast 5 - Answer Video Call")
         restart = 0
@@ -261,10 +260,10 @@ while True:
 
         keyboard.press(t6w1)
         keyboard.press(t6w2)
-        time.sleep(0.1)
+        time.sleep(0.05)
         keyboard.press(t6w3)
         keyboard.press(t6w4)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
         print("Tast 6 - Answer Audio Call")
         restart = 0
@@ -273,29 +272,27 @@ while True:
 
         keyboard.press(t7w1)
         keyboard.press(t7w2)
-        time.sleep(0.1)
+        time.sleep(0.05)
         keyboard.press(t7w3)
         keyboard.press(t7w4)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
-        time.sleep(0.1)
-        print("Tast 7 - Switch Camera")
+        print("Tast 7 - Toggle Camera")
         restart = 0
     elif tast08.value and restart == 1:
         sendThePreCommand()
 
         keyboard.press(t8w1)
         keyboard.press(t8w2)
-        time.sleep(0.1)
+        time.sleep(0.05)
         keyboard.press(t8w3)
         keyboard.press(t8w4)
-        time.sleep(0.1)
-        print("Tast 8 - Switch Microphone")
+        time.sleep(0.05)
+
+        print("Tast 8 - Toggle Microphone")
         restart = 0
-    elif tast01.value == False and tast02.value == False and \
-        tast03.value == False and tast04.value == False and \
-        tast05.value == False and tast06.value == False and \
-        tast07.value == False and tast08.value == False:
+    else:
         keyboard.release_all()
         restart = 1
-        time.sleep(0.1)
+
+    time.sleep(0.01)

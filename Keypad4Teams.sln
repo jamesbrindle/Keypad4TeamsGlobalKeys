@@ -7,10 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keypad4Teams", "Keypad4Team
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "README.md", "README.md", "{7D630E9C-0C41-4FAC-8456-48C2314A05E0}"
 	ProjectSection(SolutionItems) = preProject
-		Keypad4Teams\README.md = Keypad4Teams\README.md
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OtherSolutionFiles", "OtherSolutionFiles", "{E1E6F83A-8E9D-41BC-AC0D-9986C9186D8D}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

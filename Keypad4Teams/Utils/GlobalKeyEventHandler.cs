@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace Keypad4Teams
 {
-    class GlobalKeyboardHookEventArgs : HandledEventArgs
+    internal class GlobalKeyboardHookEventArgs : HandledEventArgs
     {
         public GlobalKeyboardHook.KeyboardState KeyboardState { get; private set; }
         public GlobalKeyboardHook.LowLevelKeyboardInputEvent KeyboardData { get; private set; }
@@ -22,7 +22,7 @@ namespace Keypad4Teams
     }
 
     //Based on https://gist.github.com/Stasonix
-    class GlobalKeyboardHook : IDisposable
+    internal class GlobalKeyboardHook : IDisposable
     {
         public event EventHandler<GlobalKeyboardHookEventArgs> KeyboardPressed;
 
@@ -101,7 +101,7 @@ namespace Keypad4Teams
         private IntPtr _user32LibraryHandle;
         private HookProc _hookProc;
 
-        delegate IntPtr HookProc(int nCode, IntPtr wParam, IntPtr lParam);
+        private delegate IntPtr HookProc(int nCode, IntPtr wParam, IntPtr lParam);
 
         [DllImport("kernel32.dll")]
         private static extern IntPtr LoadLibrary(string lpFileName);
@@ -120,7 +120,7 @@ namespace Keypad4Teams
         /// <param name="dwThreadId">thread identifier</param>
         /// <returns>If the function succeeds, the return value is the handle to the hook procedure.</returns>
         [DllImport("USER32", SetLastError = true)]
-        static extern IntPtr SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hMod, int dwThreadId);
+        private static extern IntPtr SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hMod, int dwThreadId);
 
         /// <summary>
         /// The UnhookWindowsHookEx function removes a hook procedure installed in a hook chain by the SetWindowsHookEx function.
@@ -140,7 +140,7 @@ namespace Keypad4Teams
         /// <param name="lParam">value passed to hook procedure</param>
         /// <returns>If the function succeeds, the return value is true.</returns>
         [DllImport("USER32", SetLastError = true)]
-        static extern IntPtr CallNextHookEx(IntPtr hHook, int code, IntPtr wParam, IntPtr lParam);
+        private static extern IntPtr CallNextHookEx(IntPtr hHook, int code, IntPtr wParam, IntPtr lParam);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct LowLevelKeyboardInputEvent
@@ -190,7 +190,7 @@ namespace Keypad4Teams
 
         // EDT: Replaced VkSnapshot(int) with RegisteredKeys(Keys[])
         public static Keys[] RegisteredKeys;
-        const int KfAltdown = 0x2000;
+        private const int KfAltdown = 0x2000;
         public const int LlkhfAltdown = (KfAltdown >> 8);
 
         public IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam)

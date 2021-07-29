@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Keypad4Teams")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Program to register Teams Keypad shortcuts globally.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("JB-Net Software Solution")]
 [assembly: AssemblyProduct("Keypad4Teams")]
-[assembly: AssemblyCopyright("Copyright ©  2021")]
+[assembly: AssemblyCopyright("Copyright ©  2021 JB-Net Software Solution")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

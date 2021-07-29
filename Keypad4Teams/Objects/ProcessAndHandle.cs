@@ -7,5 +7,7 @@ namespace Keypad4Teams
     {
         public Process ValidProcess { get; set; }
         public IntPtr ValidHandle { get; set; }
+        public string WindowTitle { get; set; }
+        public bool IsCallWindow { get; set; } = false;
     }
 }

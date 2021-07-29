@@ -1,5 +1,7 @@
 # Keypad4Teams
 
+[![N|Solid](https://portfolio.jb-net.co.uk/shared/keypad4teams.png)](https://github.com/jamesbrindle/Keypad4TeamsGlobalKeys/releases)
+
 This is a tiny program that allows the 'Keypad4Teams' 3D printed custom macro button set's keys to be 'global'.
 
 https://www.thingiverse.com/thing:4883188
@@ -15,7 +17,7 @@ When Alt + 0 is handled, it will look for the relevant Teams window and bring it
 
 ## Setup
 
-The installer will install to the Program Files folder and set the program to start on Windows statup. It can be exitted from the right-click context menu on the icon in the system tray.
+The installer will install to the Program Files folder and set the program to start on Windows statup. It can be exited from the right-click context menu on the icon in the system tray.
 
 There are 3 types of installer:
 

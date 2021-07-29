@@ -16,6 +16,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OtherSolutionFiles", "Other
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Installer-x64", "Installer-x64\Installer-x64.vdproj", "{20741A22-9A09-4E7E-97A8-9D051580C8F6}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Installer-x86", "Installer-x86\Installer-x86.vdproj", "{6679AE9B-A281-42F5-949A-0025EA153265}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +30,10 @@ Global
 		{EFFB2436-9817-4CBB-8E4D-EAC4F4B2E998}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFFB2436-9817-4CBB-8E4D-EAC4F4B2E998}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFFB2436-9817-4CBB-8E4D-EAC4F4B2E998}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20741A22-9A09-4E7E-97A8-9D051580C8F6}.Debug|Any CPU.ActiveCfg = Debug
+		{20741A22-9A09-4E7E-97A8-9D051580C8F6}.Release|Any CPU.ActiveCfg = Release
+		{6679AE9B-A281-42F5-949A-0025EA153265}.Debug|Any CPU.ActiveCfg = Debug
+		{6679AE9B-A281-42F5-949A-0025EA153265}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

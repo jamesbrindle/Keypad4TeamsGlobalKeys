@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31321.278
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keypad4Teams", "Keypad4Teams\Keypad4Teams.csproj", "{EFFB2436-9817-4CBB-8E4D-EAC4F4B2E998}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "README.md", "README.md", "{7D630E9C-0C41-4FAC-8456-48C2314A05E0}"
+	ProjectSection(SolutionItems) = preProject
+		Keypad4Teams\README.md = Keypad4Teams\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "OtherSolutionFiles", "OtherSolutionFiles", "{E1E6F83A-8E9D-41BC-AC0D-9986C9186D8D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EFFB2436-9817-4CBB-8E4D-EAC4F4B2E998}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFFB2436-9817-4CBB-8E4D-EAC4F4B2E998}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFFB2436-9817-4CBB-8E4D-EAC4F4B2E998}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFFB2436-9817-4CBB-8E4D-EAC4F4B2E998}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E3BCE980-4C3E-40E4-966A-B4CB39891CD0}
+	EndGlobalSection
+EndGlobal

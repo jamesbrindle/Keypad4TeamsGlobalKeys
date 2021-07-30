@@ -8,7 +8,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Keypad4Teams
@@ -16,6 +15,7 @@ namespace Keypad4Teams
     public partial class MainForm : Form
     {
         #region Dll Imports
+
         private delegate bool EnumWindowProc(IntPtr hwnd, IntPtr lParam);
 
         [DllImport("user32.dll")]
@@ -42,6 +42,21 @@ namespace Keypad4Teams
 
         [DllImport("user32.dll", EntryPoint = "FindWindowEx")]
         public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
+
+        private struct WINDOWPLACEMENT
+        {
+            public int length;
+            public int flags;
+            public int showCmd;
+            public System.Drawing.Point ptMinPosition;
+            public System.Drawing.Point ptMaxPosition;
+            public System.Drawing.Rectangle rcNormalPosition;
+        }
+
 
         #endregion
 
@@ -72,9 +87,9 @@ namespace Keypad4Teams
             {
                 Icon = Resources.favicon,
                 Text = "Keypad4Teams",
-                ContextMenu = new ContextMenu(new System.Windows.Forms.MenuItem[] 
+                ContextMenu = new ContextMenu(new System.Windows.Forms.MenuItem[]
                 {
-                    new System.Windows.Forms.MenuItem("Exit", Exit),                    
+                    new System.Windows.Forms.MenuItem("Exit", Exit),
                 }),
                 Visible = true
             };
@@ -84,63 +99,18 @@ namespace Keypad4Teams
         {
             try
             {
-                for (int i = 0; i < 5; i++)
-                {
-                    try
-                    {
-                        var teamsProcesses = Process.GetProcessesByName("Teams");
-                        var validTeamsHandles = new List<IntPtr>();
-                        _processAndHandlerList = new List<ProcessAndHandle>();
-
-                        Parallel.ForEach(teamsProcesses.AsParallel(), teamsProcess =>
-                        {
-                            string title = GetWindowTitle(teamsProcess.MainWindowHandle);
-                            if (!string.IsNullOrEmpty(title) && title.Contains("| Microsoft Teams"))
-                            {
-                                if (!validTeamsHandles.Contains(teamsProcess.MainWindowHandle))
-                                {
-                                    validTeamsHandles.Add(teamsProcess.MainWindowHandle);
-                                    _processAndHandlerList.Add(new ProcessAndHandle
-                                    {
-                                        ValidProcess = teamsProcess,
-                                        ValidHandle = teamsProcess.MainWindowHandle,
-                                        WindowTitle = title,
-                                        IsCallWindow = IsCallWindow(title)
-                                    });
-                                }
-                            }
-
-                            var childWindows = new WindowHandleInfo(teamsProcess.MainWindowHandle).GetAllChildHandles();
-                            if (childWindows != null)
-                            {
-                                Parallel.ForEach(childWindows.AsParallel(), childWindow =>
-                                {
-                                    string childTitle = GetWindowTitle(childWindow);
-                                    if (!string.IsNullOrEmpty(childTitle) && childTitle.Contains("| Microsoft Teams"))
-                                    {
-                                        if (!validTeamsHandles.Contains(childWindow))
-                                        {
-                                            validTeamsHandles.Add(childWindow);
-                                            _processAndHandlerList.Add(new ProcessAndHandle
-                                            {
-                                                ValidProcess = teamsProcess,
-                                                ValidHandle = childWindow,
-                                                WindowTitle = childTitle,
-                                                IsCallWindow = IsCallWindow(childTitle)
-                                            });
-                                        }
-                                    }
-                                });
-                            }
-                        });
-
-                        break;
-                    }
-                    catch { }
-                }
+                GatherPotentialTeamsWindows();
 
                 if (_processAndHandlerList != null && _processAndHandlerList.Count > 0)
                 {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        if (_processAndHandlerList.Count > 1 && !_processAndHandlerList.Any(m => m.IsCallWindow))
+                            DoubleCheckValidWindows();
+                        else
+                            break;
+                    }
+
                     var selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow).FirstOrDefault();
                     if (selectedProcessAndHandle != null)
                     {
@@ -152,31 +122,36 @@ namespace Keypad4Teams
 
                         try
                         {
-                            ShowWindowAsync(selectedProcessAndHandle.ValidHandle, SW_RESTORE);
+                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
+                                ShowWindowAsync(selectedProcessAndHandle.ValidHandle, SW_RESTORE);
                         }
                         catch { }
 
                         try
                         {
-                            ShowWindow(selectedProcessAndHandle.ValidHandle, SW_RESTORE_HEX);
+                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
+                                ShowWindow(selectedProcessAndHandle.ValidHandle, SW_RESTORE_HEX);
                         }
                         catch { }
 
                         try
                         {
-                            ShowWindowAsync(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE);
+                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
+                                ShowWindowAsync(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE);
                         }
                         catch { }
 
                         try
                         {
-                            ShowWindow(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE_HEX);
+                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
+                                ShowWindow(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE_HEX);
                         }
                         catch { }
 
                         try
                         {
-                            SendMessage(selectedProcessAndHandle.ValidHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
+                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
+                                SendMessage(selectedProcessAndHandle.ValidHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
                         }
                         catch { }
 
@@ -191,8 +166,91 @@ namespace Keypad4Teams
             catch { }
         }
 
+        private void GatherPotentialTeamsWindows()
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                try
+                {
+                    var teamsProcesses = Process.GetProcessesByName("Teams");
+                    var validTeamsHandles = new List<IntPtr>();
+                    _processAndHandlerList = new List<ProcessAndHandle>();
+
+                    foreach (var teamsProcess in teamsProcesses)
+                    {
+                        string title = GetWindowTitle(teamsProcess.MainWindowHandle);
+                        if (!string.IsNullOrEmpty(title) && title.Contains("| Microsoft Teams"))
+                        {
+                            if (!validTeamsHandles.Contains(teamsProcess.MainWindowHandle))
+                            {
+                                validTeamsHandles.Add(teamsProcess.MainWindowHandle);
+                                _processAndHandlerList.Add(new ProcessAndHandle
+                                {
+                                    ValidProcess = teamsProcess,
+                                    ValidHandle = teamsProcess.MainWindowHandle,
+                                    WindowTitle = title,
+                                    IsCallWindow = IsCallWindow(title)
+                                });
+                            }
+                        }
+
+                        var childWindows = new ChildWindowHandler(teamsProcess.MainWindowHandle).GetAllChildHandles();
+                        if (childWindows != null)
+                        {
+                            foreach (var childWindow in childWindows)
+                            {
+                                string childTitle = GetWindowTitle(childWindow);
+                                if (!string.IsNullOrEmpty(childTitle) && childTitle.Contains("| Microsoft Teams"))
+                                {
+                                    if (!validTeamsHandles.Contains(childWindow))
+                                    {
+                                        validTeamsHandles.Add(childWindow);
+                                        _processAndHandlerList.Add(new ProcessAndHandle
+                                        {
+                                            ValidProcess = teamsProcess,
+                                            ValidHandle = childWindow,
+                                            WindowTitle = childTitle,
+                                            IsCallWindow = IsCallWindow(childTitle)
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    break;
+                }
+                catch { }
+            }
+        }
+
+        private void DoubleCheckValidWindows()
+        {
+            foreach (var processAndHandle in _processAndHandlerList.Where(m => !m.IsCallWindow).ToList())
+                processAndHandle.IsCallWindow = IsCallWindow(processAndHandle.WindowTitle);
+        }
+
+        private bool IsWindowMinimised(IntPtr handle)
+        {
+            if (handle != IntPtr.Zero)
+            {
+                WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
+                GetWindowPlacement(handle, ref placement);
+                switch (placement.showCmd)
+                {
+                    case 2:
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
         private bool IsCallWindow(string windowName)
         {
+            if (windowName.ToLower().Contains(" with "))
+                return true;
+
             try
             {
                 using (var automation = new UIA3Automation())
@@ -205,11 +263,34 @@ namespace Keypad4Teams
                         List<AutomationElement> elements = null;
                         GetAllElementsRecurisve(parent, ref elements);
 
+                        if (elements.Count > 2)
+                        {
+                            bool hasVal = false;
+                            for (int i = 0; i < elements.Count; i++)
+                            {
+                                try
+                                {
+                                    if (elements[i].AutomationId != null && elements[i].AutomationId.Length > 0)
+                                    {
+                                        hasVal = true;
+                                        break;
+                                    }
+                                }
+                                catch { }
+                            }
+
+                            if (!hasVal)
+                                return true;
+                        }
+
                         for (int i = 0; i < elements.Count; i++)
                         {
                             try
                             {
-                                if (elements[i].AutomationId == "hangup-button")
+                                if (elements[i].AutomationId == "hangup-button" ||
+                                    elements[i].Name == "Leave" ||
+                                    elements[i].AutomationId == "microphone-button" ||
+                                    elements[i].Name == "Mute")
                                     return true;
                             }
                             catch { }
@@ -236,7 +317,10 @@ namespace Keypad4Teams
 
                     try
                     {
-                        if (element.AutomationId == "hangup-button")
+                        if (element.AutomationId == "hangup-button" ||
+                            element.Name == "Leave" ||
+                            element.AutomationId == "microphone-button" ||
+                            element.Name == "Mute")
                             break;
                     }
                     catch { }

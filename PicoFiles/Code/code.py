@@ -49,7 +49,7 @@ def sendThePreCommand():
         keyboard.press(key.ZERO)
         time.sleep(0.05)
         keyboard.release_all()
-        time.sleep(0.2)
+        time.sleep(0.4)
 
 # Read from text file
 def inhaltLesen(variant, zahl):

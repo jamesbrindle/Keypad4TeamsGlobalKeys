@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Keypad4Teams
 {
-    public class WindowHandleInfo
+    public class ChildWindowHandler
     {
         private delegate bool EnumWindowProc(IntPtr hwnd, IntPtr lParam);
 
@@ -14,7 +14,7 @@ namespace Keypad4Teams
 
         private IntPtr _MainHandle;
 
-        public WindowHandleInfo(IntPtr handle)
+        public ChildWindowHandler(IntPtr handle)
         {
             this._MainHandle = handle;
         }

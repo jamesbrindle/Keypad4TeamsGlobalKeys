@@ -46,8 +46,6 @@ namespace Keypad4Teams
                 throw new Win32Exception(errorCode, $"Failed to load library 'User32.dll'. Error {errorCode}: {new Win32Exception(Marshal.GetLastWin32Error()).Message}.");
             }
 
-
-
             _windowsHookHandle = SetWindowsHookEx(WH_KEYBOARD_LL, _hookProc, _user32LibraryHandle, 0);
             if (_windowsHookHandle == IntPtr.Zero)
             {

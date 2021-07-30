@@ -45,11 +45,11 @@ sendPreCommand = 1
 def sendThePreCommand():
     if sendPreCommand == 1:
         keyboard.press(key.LEFT_ALT)
-        time.sleep(0.02)
+        time.sleep(0.05)
         keyboard.press(key.ZERO)
-        time.sleep(0.02)
+        time.sleep(0.05)
         keyboard.release_all()
-        time.sleep(0.1)
+        time.sleep(0.2)
 
 # Read from text file
 def inhaltLesen(variant, zahl):

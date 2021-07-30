@@ -279,9 +279,6 @@ namespace Keypad4Teams
                             }
                         }
 
-                        if (windowName.ToLower().Contains(" with "))
-                            return true;
-
                         List<AutomationElement> elements = null;
                         GetAllElementsRecurisve(parent, ref elements);
 

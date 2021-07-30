@@ -82,138 +82,143 @@ namespace Keypad4Teams
 
         private void FocusTeams()
         {
-            for (int i = 0; i < 5; i++)
+            try
             {
-                try
+                for (int i = 0; i < 5; i++)
                 {
-                    var teamsProcesses = Process.GetProcessesByName("Teams");
-                    var validTeamsHandles = new List<IntPtr>();
-                    _processAndHandlerList = new List<ProcessAndHandle>();
-
-                    Parallel.ForEach(teamsProcesses.AsParallel(), teamsProcess =>
+                    try
                     {
-                        string title = GetWindowTitle(teamsProcess.MainWindowHandle);
-                        if (!string.IsNullOrEmpty(title) && title.Contains("| Microsoft Teams"))
+                        var teamsProcesses = Process.GetProcessesByName("Teams");
+                        var validTeamsHandles = new List<IntPtr>();
+                        _processAndHandlerList = new List<ProcessAndHandle>();
+
+                        Parallel.ForEach(teamsProcesses.AsParallel(), teamsProcess =>
                         {
-                            if (!validTeamsHandles.Contains(teamsProcess.MainWindowHandle))
+                            string title = GetWindowTitle(teamsProcess.MainWindowHandle);
+                            if (!string.IsNullOrEmpty(title) && title.Contains("| Microsoft Teams"))
                             {
-                                validTeamsHandles.Add(teamsProcess.MainWindowHandle);
-                                _processAndHandlerList.Add(new ProcessAndHandle
+                                if (!validTeamsHandles.Contains(teamsProcess.MainWindowHandle))
                                 {
-                                    ValidProcess = teamsProcess,
-                                    ValidHandle = teamsProcess.MainWindowHandle,
-                                    WindowTitle = title,
-                                    IsCallWindow = IsCallWindow(title)
+                                    validTeamsHandles.Add(teamsProcess.MainWindowHandle);
+                                    _processAndHandlerList.Add(new ProcessAndHandle
+                                    {
+                                        ValidProcess = teamsProcess,
+                                        ValidHandle = teamsProcess.MainWindowHandle,
+                                        WindowTitle = title,
+                                        IsCallWindow = IsCallWindow(title)
+                                    });
+                                }
+                            }
+
+                            var childWindows = new WindowHandleInfo(teamsProcess.MainWindowHandle).GetAllChildHandles();
+                            if (childWindows != null)
+                            {
+                                Parallel.ForEach(childWindows.AsParallel(), childWindow =>
+                                {
+                                    string childTitle = GetWindowTitle(childWindow);
+                                    if (!string.IsNullOrEmpty(childTitle) && childTitle.Contains("| Microsoft Teams"))
+                                    {
+                                        if (!validTeamsHandles.Contains(childWindow))
+                                        {
+                                            validTeamsHandles.Add(childWindow);
+                                            _processAndHandlerList.Add(new ProcessAndHandle
+                                            {
+                                                ValidProcess = teamsProcess,
+                                                ValidHandle = childWindow,
+                                                WindowTitle = childTitle,
+                                                IsCallWindow = IsCallWindow(childTitle)
+                                            });
+                                        }
+                                    }
                                 });
                             }
-                        }
+                        });
 
-                        var childWindows = new WindowHandleInfo(teamsProcess.MainWindowHandle).GetAllChildHandles();
-                        if (childWindows != null)
-                        {
-                            Parallel.ForEach(childWindows.AsParallel(), childWindow =>
-                            {
-                                string childTitle = GetWindowTitle(childWindow);
-                                if (!string.IsNullOrEmpty(childTitle) && childTitle.Contains("| Microsoft Teams"))
-                                {
-                                    if (!validTeamsHandles.Contains(childWindow))
-                                    {
-                                        validTeamsHandles.Add(childWindow);
-                                        _processAndHandlerList.Add(new ProcessAndHandle
-                                        {
-                                            ValidProcess = teamsProcess,
-                                            ValidHandle = childWindow,
-                                            WindowTitle = childTitle,
-                                            IsCallWindow = IsCallWindow(childTitle)
-                                        });
-                                    }
-                                }
-                            });
-                        }
-                    });
-
-                    break;
-                }
-                catch { }
-            }
-
-            if (_processAndHandlerList != null && _processAndHandlerList.Count > 0)
-            {
-                var selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow).FirstOrDefault();
-                if (selectedProcessAndHandle != null)
-                {
-                    try
-                    {
-                        SetForegroundWindow(selectedProcessAndHandle.ValidHandle);
-                    }
-                    catch { }
-
-                    try
-                    {
-                        ShowWindowAsync(selectedProcessAndHandle.ValidHandle, SW_RESTORE);
-                    }
-                    catch { }
-
-                    try
-                    {
-                        ShowWindow(selectedProcessAndHandle.ValidHandle, SW_RESTORE_HEX);
-                    }
-                    catch { }
-
-                    try
-                    {
-                        ShowWindowAsync(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE);
-                    }
-                    catch { }
-
-                    try
-                    {
-                        ShowWindow(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE_HEX);
-                    }
-                    catch { }
-
-                    try
-                    {
-                        SendMessage(selectedProcessAndHandle.ValidHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
-                    }
-                    catch { }
-
-                    try
-                    {
-                        SetForegroundWindow(selectedProcessAndHandle.ValidHandle);
+                        break;
                     }
                     catch { }
                 }
-            }
-        }
 
-        private bool IsCallWindow(string windowName)
-        {
-            using (var automation = new UIA3Automation())
-            {
-                try
+                if (_processAndHandlerList != null && _processAndHandlerList.Count > 0)
                 {
-                    var desktop = automation.GetDesktop();
-                    var parent = desktop.FindFirstChild(c => c.ByName(windowName));
-
-                    List<AutomationElement> elements = null;
-                    GetAllElementsRecurisve(parent, ref elements);
-
-                    for (int i = 0; i < elements.Count; i++)
-                    {                                            
+                    var selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow).FirstOrDefault();
+                    if (selectedProcessAndHandle != null)
+                    {
                         try
                         {
-                            if (elements[i].AutomationId == "hangup-button")
-                                return true;
+                            SetForegroundWindow(selectedProcessAndHandle.ValidHandle);
+                        }
+                        catch { }
+
+                        try
+                        {
+                            ShowWindowAsync(selectedProcessAndHandle.ValidHandle, SW_RESTORE);
+                        }
+                        catch { }
+
+                        try
+                        {
+                            ShowWindow(selectedProcessAndHandle.ValidHandle, SW_RESTORE_HEX);
+                        }
+                        catch { }
+
+                        try
+                        {
+                            ShowWindowAsync(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE);
+                        }
+                        catch { }
+
+                        try
+                        {
+                            ShowWindow(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE_HEX);
+                        }
+                        catch { }
+
+                        try
+                        {
+                            SendMessage(selectedProcessAndHandle.ValidHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
+                        }
+                        catch { }
+
+                        try
+                        {
+                            SetForegroundWindow(selectedProcessAndHandle.ValidHandle);
                         }
                         catch { }
                     }
                 }
-                catch (Exception e)
+            }
+            catch { }
+        }
+
+        private bool IsCallWindow(string windowName)
+        {
+            try
+            {
+                using (var automation = new UIA3Automation())
                 {
-                    Console.Out.Write(e.Message);
+                    try
+                    {
+                        var desktop = automation.GetDesktop();
+                        var parent = desktop.FindFirstChild(c => c.ByName(windowName));
+
+                        List<AutomationElement> elements = null;
+                        GetAllElementsRecurisve(parent, ref elements);
+
+                        for (int i = 0; i < elements.Count; i++)
+                        {
+                            try
+                            {
+                                if (elements[i].AutomationId == "hangup-button")
+                                    return true;
+                            }
+                            catch { }
+                        }
+                    }
+                    catch { }
                 }
             }
+            catch { }
 
             return false;
         }
@@ -268,6 +273,17 @@ namespace Keypad4Teams
                 key.SetValue("Keypad4Teams", "\"" + Application.ExecutablePath.ToString() + "\"");
             }
             catch { }
+        }
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var Params = base.CreateParams;
+                Params.ExStyle |= 0x80;
+
+                return Params;
+            }
         }
 
         private void Exit(object sender, EventArgs e)

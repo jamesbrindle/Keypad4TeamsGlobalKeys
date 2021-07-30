@@ -15,7 +15,7 @@ namespace Keypad4Teams
             using (new Mutex(true, "Keypad4Teams", out bool createdNew))
             {
                 if (createdNew)
-                {
+                { 
                     Application.EnableVisualStyles();
                     Application.SetCompatibleTextRenderingDefault(false);
                     Application.Run(new MainForm());

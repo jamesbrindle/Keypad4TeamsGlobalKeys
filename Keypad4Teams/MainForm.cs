@@ -69,6 +69,7 @@ namespace Keypad4Teams
         private GlobalKeyboardHook _globalKeyboardHook;
         private NotifyIcon _trayIcon;
         private List<ProcessAndHandle> _processAndHandlerList;
+        private IntPtr _altHandler = IntPtr.Zero;
 
         public MainForm()
         {
@@ -111,7 +112,13 @@ namespace Keypad4Teams
                             break;
                     }
 
-                    var selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow).FirstOrDefault();
+                    ProcessAndHandle selectedProcessAndHandle = null;
+
+                    if (_processAndHandlerList.Count(m => m.IsCallWindow) > 1)
+                        selectedProcessAndHandle = SelectHandleWhenTwoWindowsSame();
+                    else
+                        selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow).FirstOrDefault();
+
                     if (selectedProcessAndHandle != null)
                     {
                         try
@@ -164,6 +171,8 @@ namespace Keypad4Teams
                 }
             }
             catch { }
+
+            _altHandler = IntPtr.Zero;
         }
 
         private void GatherPotentialTeamsWindows()
@@ -248,9 +257,6 @@ namespace Keypad4Teams
 
         private bool IsCallWindow(string windowName)
         {
-            if (windowName.ToLower().Contains(" with "))
-                return true;
-
             try
             {
                 using (var automation = new UIA3Automation())
@@ -259,6 +265,22 @@ namespace Keypad4Teams
                     {
                         var desktop = automation.GetDesktop();
                         var parent = desktop.FindFirstChild(c => c.ByName(windowName));
+
+                        if (_altHandler == IntPtr.Zero)
+                        {
+                            try
+                            {
+                                if (parent.AutomationId == null)
+                                    _altHandler = parent.Properties.NativeWindowHandle;
+                            }
+                            catch
+                            {
+                                _altHandler = parent.Properties.NativeWindowHandle;
+                            }
+                        }
+
+                        if (windowName.ToLower().Contains(" with "))
+                            return true;
 
                         List<AutomationElement> elements = null;
                         GetAllElementsRecurisve(parent, ref elements);
@@ -290,7 +312,11 @@ namespace Keypad4Teams
                                 if (elements[i].AutomationId == "hangup-button" ||
                                     elements[i].Name == "Leave" ||
                                     elements[i].AutomationId == "microphone-button" ||
-                                    elements[i].Name == "Mute")
+                                    elements[i].Name == "Mute" ||
+                                    elements[i].AutomationId == "video-button" ||
+                                    (elements[i].Name == "Turn Camera On" || elements[i].Name == "Turn Camera Off") ||
+                                    elements[i].Name == "Mute" ||
+                                    elements[i].AutomationId == "video-button")
                                     return true;
                             }
                             catch { }
@@ -302,6 +328,16 @@ namespace Keypad4Teams
             catch { }
 
             return false;
+        }
+
+        private ProcessAndHandle SelectHandleWhenTwoWindowsSame()
+        {
+            return new ProcessAndHandle
+            {
+                ValidProcess = _processAndHandlerList.FirstOrDefault().ValidProcess,
+                WindowTitle = _processAndHandlerList.FirstOrDefault().WindowTitle,
+                ValidHandle = _altHandler
+            };
         }
 
         private void GetAllElementsRecurisve(AutomationElement parent, ref List<AutomationElement> elements)
@@ -320,7 +356,11 @@ namespace Keypad4Teams
                         if (element.AutomationId == "hangup-button" ||
                             element.Name == "Leave" ||
                             element.AutomationId == "microphone-button" ||
-                            element.Name == "Mute")
+                            element.Name == "Mute" ||
+                            element.AutomationId == "video-button" ||
+                            (element.Name == "Turn Camera On" || element.Name == "Turn Camera Off") ||
+                            element.Name == "Mute" ||
+                            element.AutomationId == "video-button")
                             break;
                     }
                     catch { }

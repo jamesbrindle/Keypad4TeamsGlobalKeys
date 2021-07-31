@@ -57,7 +57,6 @@ namespace Keypad4Teams
             public System.Drawing.Rectangle rcNormalPosition;
         }
 
-
         #endregion
 
         private const int SW_RESTORE = 9;
@@ -70,6 +69,7 @@ namespace Keypad4Teams
         private NotifyIcon _trayIcon;
         private List<ProcessAndHandle> _processAndHandlerList;
         private IntPtr _altHandler = IntPtr.Zero;
+        private int _iterationIndex = 0;
 
         public MainForm()
         {
@@ -117,7 +117,10 @@ namespace Keypad4Teams
                     if (_processAndHandlerList.Count(m => m.IsCallWindow) > 1)
                         selectedProcessAndHandle = SelectHandleWhenTwoWindowsSame();
                     else
-                        selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow).ThenBy(p => p.NullHandle).FirstOrDefault();
+                        selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow)
+                                                                         .ThenBy(p => p.NullHandle)
+                                                                         .ThenByDescending(p => p.IterationIndex)
+                                                                         .FirstOrDefault();
 
                     if (selectedProcessAndHandle != null)
                     {
@@ -173,6 +176,7 @@ namespace Keypad4Teams
             catch { }
 
             _altHandler = IntPtr.Zero;
+            _iterationIndex = 0;
         }
 
         private void GatherPotentialTeamsWindows()
@@ -199,8 +203,10 @@ namespace Keypad4Teams
                                     ValidHandle = teamsProcess.MainWindowHandle,
                                     WindowTitle = title,
                                     IsCallWindow = IsCallWindow(title, out bool nullHandle),
-                                    NullHandle = nullHandle
+                                    NullHandle = nullHandle,
+                                    IterationIndex = _iterationIndex
                                 });
+                                _iterationIndex++;
                             }
                         }
 
@@ -221,8 +227,10 @@ namespace Keypad4Teams
                                             ValidHandle = childWindow,
                                             WindowTitle = childTitle,
                                             IsCallWindow = IsCallWindow(childTitle, out bool nullHandle),
-                                            NullHandle = nullHandle
+                                            NullHandle = nullHandle,
+                                            IterationIndex = _iterationIndex
                                         });
+                                        _iterationIndex++;
                                     }
                                 }
                             }
@@ -329,9 +337,8 @@ namespace Keypad4Teams
                                     elements[i].AutomationId == "microphone-button" ||
                                     elements[i].Name == "Mute" ||
                                     elements[i].AutomationId == "video-button" ||
-                                    (elements[i].Name == "Turn Camera On" || elements[i].Name == "Turn Camera Off") ||
-                                    elements[i].Name == "Mute" ||
-                                    elements[i].AutomationId == "video-button")
+                                    elements[i].Name == "Turn Camera On" || 
+                                    elements[i].Name == "Turn Camera Off")
                                     return true;
                             }
                             catch { }
@@ -373,9 +380,8 @@ namespace Keypad4Teams
                             element.AutomationId == "microphone-button" ||
                             element.Name == "Mute" ||
                             element.AutomationId == "video-button" ||
-                            (element.Name == "Turn Camera On" || element.Name == "Turn Camera Off") ||
-                            element.Name == "Mute" ||
-                            element.AutomationId == "video-button")
+                            element.Name == "Turn Camera On" || 
+                            element.Name == "Turn Camera Off")
                             break;
                     }
                     catch { }

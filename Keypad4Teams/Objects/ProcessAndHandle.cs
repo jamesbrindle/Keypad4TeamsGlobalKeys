@@ -10,5 +10,6 @@ namespace Keypad4Teams
         public string WindowTitle { get; set; }
         public bool IsCallWindow { get; set; } = false;
         public bool NullHandle { get; set; } = false;
+        public int IterationIndex { get; set; } = 0;
     }
 }

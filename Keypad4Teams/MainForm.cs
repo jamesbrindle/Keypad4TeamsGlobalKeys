@@ -81,6 +81,10 @@ namespace Keypad4Teams
             SetStartWithWindows();
 
             ShowInTaskbar = false;
+            FormBorderStyle = FormBorderStyle.None;
+            Opacity = 0;
+            Hide();
+
             Hide();
             WindowState = FormWindowState.Minimized;
 
@@ -104,24 +108,18 @@ namespace Keypad4Teams
 
                 if (_processAndHandlerList != null && _processAndHandlerList.Count > 0)
                 {
-                    for (int i = 0; i < 5; i++)
-                    {
-                        if (_processAndHandlerList.Count > 1 && !_processAndHandlerList.Any(m => m.IsCallWindow))
-                            DoubleCheckValidWindows();
-                        else
-                            break;
-                    }
-
                     ProcessAndHandle selectedProcessAndHandle = null;
 
                     if (_processAndHandlerList.Count(m => m.IsCallWindow) > 1)
-                        selectedProcessAndHandle = SelectHandleWhenTwoWindowsSame();
+                        selectedProcessAndHandle = SelectHandleWhenTwoWindowsReportIsCall();
+
+                    else if (_processAndHandlerList.Count(m => !m.IsCallWindow) == _processAndHandlerList.Count)
+                        selectedProcessAndHandle = SelectHandleWhenNoWindowsReportIsCall();
+
                     else
                         selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow)
                                                                          .ThenBy(p => p.NullHandle)
-                                                                         .ThenByDescending(p => p.IterationIndex)
                                                                          .FirstOrDefault();
-
                     if (selectedProcessAndHandle != null)
                     {
                         try
@@ -202,7 +200,9 @@ namespace Keypad4Teams
                                     ValidProcess = teamsProcess,
                                     ValidHandle = teamsProcess.MainWindowHandle,
                                     WindowTitle = title,
-                                    IsCallWindow = IsCallWindow(title, out bool nullHandle),
+                                    IsCallWindow = IsCallWindow(title, out bool nullHandle, out List<AutomationElement> elements, out bool blackPixel),
+                                    BlackPixel = blackPixel,
+                                    Elements = elements,
                                     NullHandle = nullHandle,
                                     IterationIndex = _iterationIndex
                                 });
@@ -226,7 +226,9 @@ namespace Keypad4Teams
                                             ValidProcess = teamsProcess,
                                             ValidHandle = childWindow,
                                             WindowTitle = childTitle,
-                                            IsCallWindow = IsCallWindow(childTitle, out bool nullHandle),
+                                            IsCallWindow = IsCallWindow(childTitle, out bool nullHandle, out List<AutomationElement> elements, out bool blackPixel),
+                                            BlackPixel = blackPixel,
+                                            Elements = elements,
                                             NullHandle = nullHandle,
                                             IterationIndex = _iterationIndex
                                         });
@@ -240,15 +242,6 @@ namespace Keypad4Teams
                     break;
                 }
                 catch { }
-            }
-        }
-
-        private void DoubleCheckValidWindows()
-        {
-            foreach (var processAndHandle in _processAndHandlerList.Where(m => !m.IsCallWindow).ToList())
-            {
-                processAndHandle.IsCallWindow = IsCallWindow(processAndHandle.WindowTitle, out bool nullHandle);
-                processAndHandle.NullHandle = nullHandle;
             }
         }
 
@@ -268,9 +261,11 @@ namespace Keypad4Teams
             return false;
         }
 
-        private bool IsCallWindow(string windowName, out bool nullHandle)
+        private bool IsCallWindow(string windowName, out bool nullHandle, out List<AutomationElement> elements, out bool blackPixel)
         {
             nullHandle = false;
+            elements = new List<AutomationElement>();
+            blackPixel = false;
 
             try
             {
@@ -288,7 +283,7 @@ namespace Keypad4Teams
                         }
 
                         if (_altHandler == IntPtr.Zero)
-                        {  
+                        {
                             try
                             {
                                 if (parent != null && parent.AutomationId == null)
@@ -305,28 +300,21 @@ namespace Keypad4Teams
                             }
                         }
 
-                        List<AutomationElement> elements = null;
-                        GetAllElementsRecurisve(parent, ref elements);
-
-                        if (elements.Count > 2)
+                        try
                         {
-                            bool hasVal = false;
-                            for (int i = 0; i < elements.Count; i++)
-                            {
-                                try
-                                {
-                                    if (elements[i].AutomationId != null && elements[i].AutomationId.Length > 0)
-                                    {
-                                        hasVal = true;
-                                        break;
-                                    }
-                                }
-                                catch { }
-                            }
+                            var bmp = parent.Capture();
+                            var pixelColor = bmp.GetPixel(1, 1);
 
-                            if (!hasVal)
-                                return true;
+                            if (pixelColor.R <= 22 && pixelColor.G <= 22 && pixelColor.B <= 22)
+                                blackPixel = true;
+
+                            bmp.Dispose();
                         }
+                        catch { }
+
+                        List<AutomationElement> elementsList = null;
+                        GetAllElementsRecurisve(parent, ref elementsList);
+                        elements = elementsList;
 
                         for (int i = 0; i < elements.Count; i++)
                         {
@@ -337,7 +325,7 @@ namespace Keypad4Teams
                                     elements[i].AutomationId == "microphone-button" ||
                                     elements[i].Name == "Mute" ||
                                     elements[i].AutomationId == "video-button" ||
-                                    elements[i].Name == "Turn Camera On" || 
+                                    elements[i].Name == "Turn Camera On" ||
                                     elements[i].Name == "Turn Camera Off")
                                     return true;
                             }
@@ -352,7 +340,7 @@ namespace Keypad4Teams
             return false;
         }
 
-        private ProcessAndHandle SelectHandleWhenTwoWindowsSame()
+        private ProcessAndHandle SelectHandleWhenTwoWindowsReportIsCall()
         {
             return new ProcessAndHandle
             {
@@ -362,16 +350,90 @@ namespace Keypad4Teams
             };
         }
 
-        private void GetAllElementsRecurisve(AutomationElement parent, ref List<AutomationElement> elements)
+        private ProcessAndHandle SelectHandleWhenNoWindowsReportIsCall()
+        {
+            // Use a points system to try and 'guess' the call Window
+
+            foreach (var ph in _processAndHandlerList)
+            {
+                if (ph.BlackPixel)
+                    ph.Points++;
+
+                if (ph.Elements.Count >= 2)
+                {
+                    int hasValCount = 0;
+                    for (int i = 0; i < ph.Elements.Count; i++)
+                    {
+                        try
+                        {
+                            if (ph.Elements[i].AutomationId != null && ph.Elements[i].AutomationId.Length > 0)
+                                hasValCount++;
+                        }
+                        catch { }
+                    }
+
+                    if (hasValCount < 2)
+                        ph.Points++;
+                }
+
+                if (ph.Elements.Count == 2 || (ph.Elements.Count >= 6 && ph.Elements.Count <= 7))
+                    ph.Points++;
+
+                if (ph.Elements.Count > 30)
+                    ph.Points--;
+
+                if (ph.Elements.Count == 0)
+                    ph.Points--;
+            }
+
+            int max = -99;
+
+            foreach (var ph in _processAndHandlerList)
+            {
+                if (ph.Points > max)
+                    max = ph.Points;
+            }
+
+            int maxCount = 0;
+            foreach (var ph in _processAndHandlerList)
+            {
+                if (ph.Points == max)
+                    maxCount++;
+            }
+
+            if (maxCount == 1)
+            {
+                return _processAndHandlerList.OrderByDescending(m => m.Points)
+                                             .ThenBy(m => m.NullHandle)
+                                             .FirstOrDefault();
+            }
+            else
+            {
+                var rand = new Random();
+                var possibles = _processAndHandlerList.Where(m => m.Points == maxCount).ToList();
+                int toSkip = rand.Next(0, possibles.Count);
+
+                return possibles.Skip(toSkip).Take(1).First();
+            }
+        }
+
+        private void GetAllElementsRecurisve(AutomationElement parent, ref List<AutomationElement> elements, int count = 0)
         {
             if (elements == null)
                 elements = new List<AutomationElement>();
+
+            if (count > 50)
+                return;
 
             if (parent != null)
             {
                 foreach (var element in parent.FindAllChildren())
                 {
                     elements.Add(element);
+                    count++;
+
+                    if (count > 50)
+                        break;
 
                     try
                     {
@@ -380,14 +442,17 @@ namespace Keypad4Teams
                             element.AutomationId == "microphone-button" ||
                             element.Name == "Mute" ||
                             element.AutomationId == "video-button" ||
-                            element.Name == "Turn Camera On" || 
+                            element.Name == "Turn Camera On" ||
                             element.Name == "Turn Camera Off")
                             break;
                     }
                     catch { }
 
-                    GetAllElementsRecurisve(element, ref elements);
+                    GetAllElementsRecurisve(element, ref elements, count);
                 }
+
+                if (count > 50)
+                    return;
             }
         }
 
@@ -420,21 +485,21 @@ namespace Keypad4Teams
             catch { }
         }
 
-        protected override CreateParams CreateParams
-        {
-            get
-            {
-                var Params = base.CreateParams;
-                Params.ExStyle |= 0x80;
-
-                return Params;
-            }
-        }
-
         private void Exit(object sender, EventArgs e)
         {
             _trayIcon.Visible = false;
             Application.Exit();
+        }
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                CreateParams cp = base.CreateParams;
+                // turn on WS_EX_TOOLWINDOW style bit
+                cp.ExStyle |= 0x80;
+                return cp;
+            }
         }
 
         public new void Dispose()

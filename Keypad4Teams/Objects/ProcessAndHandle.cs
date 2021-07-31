@@ -1,4 +1,6 @@
-﻿using System;
+﻿using FlaUI.Core.AutomationElements;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace Keypad4Teams
@@ -11,5 +13,8 @@ namespace Keypad4Teams
         public bool IsCallWindow { get; set; } = false;
         public bool NullHandle { get; set; } = false;
         public int IterationIndex { get; set; } = 0;
+        public List<AutomationElement> Elements { get; set; } = new List<AutomationElement>();
+        public int Points { get; set; } = 0;
+        public bool BlackPixel { get; set; } = false;
     }
 }

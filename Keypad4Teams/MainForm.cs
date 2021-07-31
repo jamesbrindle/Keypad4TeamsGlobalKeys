@@ -117,7 +117,7 @@ namespace Keypad4Teams
                     if (_processAndHandlerList.Count(m => m.IsCallWindow) > 1)
                         selectedProcessAndHandle = SelectHandleWhenTwoWindowsSame();
                     else
-                        selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow).FirstOrDefault();
+                        selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow).ThenBy(p => p.NullHandle).FirstOrDefault();
 
                     if (selectedProcessAndHandle != null)
                     {
@@ -198,7 +198,8 @@ namespace Keypad4Teams
                                     ValidProcess = teamsProcess,
                                     ValidHandle = teamsProcess.MainWindowHandle,
                                     WindowTitle = title,
-                                    IsCallWindow = IsCallWindow(title)
+                                    IsCallWindow = IsCallWindow(title, out bool nullHandle),
+                                    NullHandle = nullHandle
                                 });
                             }
                         }
@@ -219,7 +220,8 @@ namespace Keypad4Teams
                                             ValidProcess = teamsProcess,
                                             ValidHandle = childWindow,
                                             WindowTitle = childTitle,
-                                            IsCallWindow = IsCallWindow(childTitle)
+                                            IsCallWindow = IsCallWindow(childTitle, out bool nullHandle),
+                                            NullHandle = nullHandle
                                         });
                                     }
                                 }
@@ -236,7 +238,10 @@ namespace Keypad4Teams
         private void DoubleCheckValidWindows()
         {
             foreach (var processAndHandle in _processAndHandlerList.Where(m => !m.IsCallWindow).ToList())
-                processAndHandle.IsCallWindow = IsCallWindow(processAndHandle.WindowTitle);
+            {
+                processAndHandle.IsCallWindow = IsCallWindow(processAndHandle.WindowTitle, out bool nullHandle);
+                processAndHandle.NullHandle = nullHandle;
+            }
         }
 
         private bool IsWindowMinimised(IntPtr handle)
@@ -255,8 +260,10 @@ namespace Keypad4Teams
             return false;
         }
 
-        private bool IsCallWindow(string windowName)
+        private bool IsCallWindow(string windowName, out bool nullHandle)
         {
+            nullHandle = false;
+
             try
             {
                 using (var automation = new UIA3Automation())
@@ -266,16 +273,27 @@ namespace Keypad4Teams
                         var desktop = automation.GetDesktop();
                         var parent = desktop.FindFirstChild(c => c.ByName(windowName));
 
-                        if (_altHandler == IntPtr.Zero)
+                        if (parent == null)
                         {
+                            nullHandle = true;
+                            return false;
+                        }
+
+                        if (_altHandler == IntPtr.Zero)
+                        {  
                             try
                             {
-                                if (parent.AutomationId == null)
+                                if (parent != null && parent.AutomationId == null)
                                     _altHandler = parent.Properties.NativeWindowHandle;
                             }
                             catch
                             {
-                                _altHandler = parent.Properties.NativeWindowHandle;
+                                try
+                                {
+                                    if (parent != null && parent.Properties != null && parent.Properties.NativeWindowHandle != null)
+                                        _altHandler = parent.Properties.NativeWindowHandle;
+                                }
+                                catch { }
                             }
                         }
 

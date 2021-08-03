@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using static Keypad4Teams.WindowHelper;
 
@@ -72,28 +71,18 @@ namespace Keypad4Teams
                             if (!HandleCache.Any(m => m.Handle == handle))
                             {
                                 string windowTitle = GetWindowTitle(handle);
-
-                                bool isCallWindow = false;
-                                bool nullHandle = false;
-                                List<AutomationElement> elements = null;
-                                Process process = null;
-
-                                // Include a timeout
-                                var task = Task.Run(() =>
+                                if (windowTitle != null && windowTitle.Length > 0 && !windowTitle.ToLower().Contains("call in progress"))
                                 {
-                                    isCallWindow = IsCallWindow(windowTitle, handle, out process, out nullHandle, out elements);
-                                });
-                                bool _ = task.Wait(TimeSpan.FromMilliseconds(3000));
-
-                                HandleCache.Add(new ProcessAndHandle
-                                {
-                                    Handle = handle,
-                                    WindowTitle = windowTitle,
-                                    IsCallWindow = isCallWindow,
-                                    NullHandle = nullHandle,
-                                    Elements = elements,
-                                    ValidProcess = process 
-                                });
+                                    HandleCache.Add(new ProcessAndHandle
+                                    {
+                                        Handle = handle,
+                                        WindowTitle = windowTitle,
+                                        IsCallWindow = IsCallWindow(windowTitle, handle, out Process process, out bool nullHandle, out List<AutomationElement> elements),
+                                        NullHandle = nullHandle,
+                                        Elements = elements,
+                                        ValidProcess = process
+                                    });
+                                }
                             }
                         }
                         catch { }
@@ -267,7 +256,7 @@ namespace Keypad4Teams
                     var validTeamsHandles = new List<IntPtr>();
                     RecentProcessAndHandle = new List<ProcessAndHandle>();
 
-                    Parallel.ForEach(teamsProcesses, teamsProcess =>
+                    foreach (var teamsProcess in teamsProcesses)
                     {
                         string title = GetWindowTitle(teamsProcess.MainWindowHandle);
                         if (!string.IsNullOrEmpty(title) && title.Contains("| Microsoft Teams"))
@@ -275,25 +264,12 @@ namespace Keypad4Teams
                             if (!validTeamsHandles.Contains(teamsProcess.MainWindowHandle))
                             {
                                 validTeamsHandles.Add(teamsProcess.MainWindowHandle);
-
-                                bool isCallWindow = false;
-                                bool nullHandle = false;
-                                List<AutomationElement> elements = null;
-                                Process process = null; 
-
-                                // Include a timeout
-                                var task = Task.Run(() =>
-                                {
-                                    isCallWindow = IsCallWindow(title, teamsProcess.MainWindowHandle, out process, out nullHandle, out elements);
-                                });
-                                bool _ = task.Wait(TimeSpan.FromMilliseconds(3000));
-
                                 var ph = new ProcessAndHandle
                                 {
                                     ValidProcess = teamsProcess,
                                     Handle = teamsProcess.MainWindowHandle,
                                     WindowTitle = title,
-                                    IsCallWindow = isCallWindow,
+                                    IsCallWindow = IsCallWindow(title, teamsProcess.MainWindowHandle, out Process process, out bool nullHandle, out List<AutomationElement> elements),
                                     Elements = elements,
                                     NullHandle = nullHandle
                                 };
@@ -307,7 +283,7 @@ namespace Keypad4Teams
                         var childWindows = new ChildWindowHandler(teamsProcess.MainWindowHandle).GetAllChildHandles();
                         if (childWindows != null)
                         {
-                            Parallel.ForEach(childWindows, childWindow =>
+                            foreach (var childWindow in childWindows)
                             {
                                 string childTitle = GetWindowTitle(childWindow);
                                 if (!string.IsNullOrEmpty(childTitle) && childTitle.Contains("| Microsoft Teams"))
@@ -315,25 +291,12 @@ namespace Keypad4Teams
                                     if (!validTeamsHandles.Contains(childWindow))
                                     {
                                         validTeamsHandles.Add(childWindow);
-
-                                        bool isCallWindow = false;
-                                        bool nullHandle = false;
-                                        List<AutomationElement> elements = null;
-                                        Process process = null;
-
-                                        // Include a timeout
-                                        var task = Task.Run(() =>
-                                        {
-                                            isCallWindow = IsCallWindow(childTitle, childWindow, out process, out nullHandle, out elements);
-                                        });
-                                        bool _ = task.Wait(TimeSpan.FromMilliseconds(3000));
-
                                         var ph = new ProcessAndHandle
                                         {
                                             ValidProcess = teamsProcess,
-                                            Handle = teamsProcess.MainWindowHandle,
+                                            Handle = childWindow,
                                             WindowTitle = title,
-                                            IsCallWindow = isCallWindow,
+                                            IsCallWindow = IsCallWindow(title, childWindow, out Process process, out bool nullHandle, out List<AutomationElement> elements),
                                             Elements = elements,
                                             NullHandle = nullHandle
                                         };
@@ -343,9 +306,9 @@ namespace Keypad4Teams
                                             HandleCache.Add(ph);
                                     }
                                 }
-                            });
+                            }
                         }
-                    });
+                    }
 
                     break;
                 }

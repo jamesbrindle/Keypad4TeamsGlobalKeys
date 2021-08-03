@@ -6,70 +6,25 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using static Keypad4Teams.WindowHelper;
 
 namespace Keypad4Teams
 {
     public partial class MainForm : Form
     {
-        #region Dll Imports
-
-        private delegate bool EnumWindowProc(IntPtr hwnd, IntPtr lParam);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
-
-        [DllImport("user32.dll")]
-        private static extern int ShowWindow(IntPtr hWnd, uint Msg);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, UInt32 wParam, UInt32 lParam);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-
-        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern int GetWindowTextLength(IntPtr hWnd);
-
-        [DllImport("user32.dll")]
-        public static extern int GetAsyncKeyState(Int32 i);
-
-        [DllImport("user32.dll", EntryPoint = "FindWindowEx")]
-        public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string lpszClass, string lpszWindow);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        static extern bool GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
-
-        private struct WINDOWPLACEMENT
-        {
-            public int length;
-            public int flags;
-            public int showCmd;
-            public System.Drawing.Point ptMinPosition;
-            public System.Drawing.Point ptMaxPosition;
-            public System.Drawing.Rectangle rcNormalPosition;
-        }
-
-        #endregion
-
-        private const int SW_RESTORE = 9;
-        private const uint SW_RESTORE_HEX = 0x09;
-
-        private const UInt32 WM_SYSCOMMAND = 0x0112;
-        private const UInt32 SC_RESTORE = 0xF120;
-
         private GlobalKeyboardHook _globalKeyboardHook;
         private NotifyIcon _trayIcon;
-        private List<ProcessAndHandle> _processAndHandlerList;
         private IntPtr _altHandler = IntPtr.Zero;
-        private int _iterationIndex = 0;
+
+        private readonly int _msgNotify;
+        public delegate void EventHandler(object sender, int action, IntPtr handle);
+
+        public event EventHandler WindowEvent;
+        private List<ProcessAndHandle> RecentProcessAndHandle { get; set; }
+        public List<ProcessAndHandle> HandleCache { get; set; } = new List<ProcessAndHandle>();
 
         public MainForm()
         {
@@ -85,7 +40,6 @@ namespace Keypad4Teams
             Opacity = 0;
             Hide();
 
-            Hide();
             WindowState = FormWindowState.Minimized;
 
             _trayIcon = new NotifyIcon()
@@ -98,74 +52,173 @@ namespace Keypad4Teams
                 }),
                 Visible = true
             };
+
+            _msgNotify = RegisterWindowMessage("SHELLHOOK");
+            RegisterShellHookWindow(Handle);
+
+            WindowEvent += WindowsEventHandler;
+        }
+
+        public void WindowsEventHandler(object sender, int action, IntPtr handle)
+        {
+            switch ((ShellEvents)action)
+            {
+                case ShellEvents.HSHELL_WINDOWCREATED:
+                    new Thread((ThreadStart)delegate
+                    {
+                        Thread.Sleep(500);
+                        try
+                        {
+                            if (!HandleCache.Any(m => m.Handle == handle))
+                            {
+                                string windowTitle = GetWindowTitle(handle);
+
+                                bool isCallWindow = false;
+                                bool nullHandle = false;
+                                List<AutomationElement> elements = null;
+                                Process process = null;
+
+                                // Include a timeout
+                                var task = Task.Run(() =>
+                                {
+                                    isCallWindow = IsCallWindow(windowTitle, handle, out process, out nullHandle, out elements);
+                                });
+                                bool _ = task.Wait(TimeSpan.FromMilliseconds(3000));
+
+                                HandleCache.Add(new ProcessAndHandle
+                                {
+                                    Handle = handle,
+                                    WindowTitle = windowTitle,
+                                    IsCallWindow = isCallWindow,
+                                    NullHandle = nullHandle,
+                                    Elements = elements,
+                                    ValidProcess = process 
+                                });
+                            }
+                        }
+                        catch { }
+                    }).Start();
+                    break;
+                case ShellEvents.HSHELL_WINDOWDESTROYED:
+                    try
+                    {
+                        HandleCache.RemoveAll(m => m.Handle == handle);
+                    }
+                    catch { }
+                    break;
+            }
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == _msgNotify)
+            {
+                switch ((ShellEvents)m.WParam.ToInt32())
+                {
+                    case ShellEvents.HSHELL_WINDOWCREATED:
+                    case ShellEvents.HSHELL_WINDOWDESTROYED:
+                    case ShellEvents.HSHELL_WINDOWACTIVATED:
+                        string processTitle = GetWindowTitle(m.LParam);
+                        if (processTitle.ToLower().Contains("teams"))
+                        {
+                            int action = m.WParam.ToInt32();
+                            OnWindowEvent(action, m.LParam);
+                        }
+                        break;
+                }
+            }
+            base.WndProc(ref m);
+        }
+
+        protected virtual void OnWindowEvent(int action, IntPtr handle)
+        {
+            var handler = WindowEvent;
+            if (handler != null)
+                handler(this, action, handle);
         }
 
         private void FocusTeams()
         {
             try
             {
-                GatherPotentialTeamsWindows();
+                bool isCachedValid = false;
+                if (HandleCache.Count(m => m.IsCallWindow) == 1)
+                {
+                    var cph = HandleCache.Where(m => m.IsCallWindow).FirstOrDefault();
+                    if (IsWindow(cph.Handle))
+                    {
+                        RecentProcessAndHandle = new List<ProcessAndHandle>
+                        {
+                            cph
+                        };
 
-                if (_processAndHandlerList != null && _processAndHandlerList.Count > 0)
+                        isCachedValid = true;
+                    }
+                }
+
+                if (!isCachedValid)
+                    GatherPotentialTeamsWindows();
+
+                if (RecentProcessAndHandle != null && RecentProcessAndHandle.Count > 0)
                 {
                     ProcessAndHandle selectedProcessAndHandle = null;
 
-                    if (_processAndHandlerList.Count(m => m.IsCallWindow) > 1)
+                    if (RecentProcessAndHandle.Count(m => m.IsCallWindow) > 1)
                         selectedProcessAndHandle = SelectHandleWhenTwoWindowsReportIsCall();
 
-                    else if (_processAndHandlerList.Count(m => !m.IsCallWindow) == _processAndHandlerList.Count)
+                    else if (RecentProcessAndHandle.Count(m => !m.IsCallWindow) == RecentProcessAndHandle.Count)
                         selectedProcessAndHandle = SelectHandleWhenNoWindowsReportIsCall();
 
                     else
-                        selectedProcessAndHandle = _processAndHandlerList.OrderByDescending(p => p.IsCallWindow)
+                        selectedProcessAndHandle = RecentProcessAndHandle.OrderByDescending(p => p.IsCallWindow)
                                                                          .ThenBy(p => p.NullHandle)
                                                                          .FirstOrDefault();
                     if (selectedProcessAndHandle != null)
                     {
                         try
                         {
-                            SetForegroundWindow(selectedProcessAndHandle.ValidHandle);
+                            SetForegroundWindow(selectedProcessAndHandle.Handle);
                         }
                         catch { }
 
                         try
                         {
-                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
-                                ShowWindowAsync(selectedProcessAndHandle.ValidHandle, SW_RESTORE);
+                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
+                                ShowWindowAsync(selectedProcessAndHandle.Handle, SW_RESTORE);
                         }
                         catch { }
 
                         try
                         {
-                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
-                                ShowWindow(selectedProcessAndHandle.ValidHandle, SW_RESTORE_HEX);
+                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
+                                ShowWindow(selectedProcessAndHandle.Handle, SW_RESTORE_HEX);
                         }
                         catch { }
 
                         try
                         {
-                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
+                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
                                 ShowWindowAsync(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE);
                         }
                         catch { }
 
                         try
                         {
-                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
+                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
                                 ShowWindow(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE_HEX);
                         }
                         catch { }
 
                         try
                         {
-                            if (IsWindowMinimised(selectedProcessAndHandle.ValidHandle))
-                                SendMessage(selectedProcessAndHandle.ValidHandle, WM_SYSCOMMAND, SC_RESTORE, 0);
+                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
+                                SendMessage(selectedProcessAndHandle.Handle, WM_SYSCOMMAND, SC_RESTORE, 0);
                         }
                         catch { }
 
                         try
                         {
-                            SetForegroundWindow(selectedProcessAndHandle.ValidHandle);
+                            SetForegroundWindow(selectedProcessAndHandle.Handle);
                         }
                         catch { }
                     }
@@ -174,7 +227,6 @@ namespace Keypad4Teams
             catch { }
 
             _altHandler = IntPtr.Zero;
-            _iterationIndex = 0;
         }
 
         private void GatherPotentialTeamsWindows()
@@ -185,9 +237,9 @@ namespace Keypad4Teams
                 {
                     var teamsProcesses = Process.GetProcessesByName("Teams");
                     var validTeamsHandles = new List<IntPtr>();
-                    _processAndHandlerList = new List<ProcessAndHandle>();
+                    RecentProcessAndHandle = new List<ProcessAndHandle>();
 
-                    foreach (var teamsProcess in teamsProcesses)
+                    Parallel.ForEach(teamsProcesses, teamsProcess =>
                     {
                         string title = GetWindowTitle(teamsProcess.MainWindowHandle);
                         if (!string.IsNullOrEmpty(title) && title.Contains("| Microsoft Teams"))
@@ -195,25 +247,39 @@ namespace Keypad4Teams
                             if (!validTeamsHandles.Contains(teamsProcess.MainWindowHandle))
                             {
                                 validTeamsHandles.Add(teamsProcess.MainWindowHandle);
-                                _processAndHandlerList.Add(new ProcessAndHandle
+
+                                bool isCallWindow = false;
+                                bool nullHandle = false;
+                                List<AutomationElement> elements = null;
+                                Process process = null; 
+
+                                // Include a timeout
+                                var task = Task.Run(() =>
+                                {
+                                    isCallWindow = IsCallWindow(title, teamsProcess.MainWindowHandle, out process, out nullHandle, out elements);
+                                });
+                                bool _ = task.Wait(TimeSpan.FromMilliseconds(3000));
+
+                                var ph = new ProcessAndHandle
                                 {
                                     ValidProcess = teamsProcess,
-                                    ValidHandle = teamsProcess.MainWindowHandle,
+                                    Handle = teamsProcess.MainWindowHandle,
                                     WindowTitle = title,
-                                    IsCallWindow = IsCallWindow(title, out bool nullHandle, out List<AutomationElement> elements, out bool blackPixel),
-                                    BlackPixel = blackPixel,
+                                    IsCallWindow = isCallWindow,
                                     Elements = elements,
-                                    NullHandle = nullHandle,
-                                    IterationIndex = _iterationIndex
-                                });
-                                _iterationIndex++;
+                                    NullHandle = nullHandle
+                                };
+
+                                RecentProcessAndHandle.Add(ph);
+                                if (!HandleCache.Any(m => m.Handle == teamsProcess.MainWindowHandle))
+                                    HandleCache.Add(ph);
                             }
                         }
 
                         var childWindows = new ChildWindowHandler(teamsProcess.MainWindowHandle).GetAllChildHandles();
                         if (childWindows != null)
                         {
-                            foreach (var childWindow in childWindows)
+                            Parallel.ForEach(childWindows, childWindow =>
                             {
                                 string childTitle = GetWindowTitle(childWindow);
                                 if (!string.IsNullOrEmpty(childTitle) && childTitle.Contains("| Microsoft Teams"))
@@ -221,23 +287,37 @@ namespace Keypad4Teams
                                     if (!validTeamsHandles.Contains(childWindow))
                                     {
                                         validTeamsHandles.Add(childWindow);
-                                        _processAndHandlerList.Add(new ProcessAndHandle
+
+                                        bool isCallWindow = false;
+                                        bool nullHandle = false;
+                                        List<AutomationElement> elements = null;
+                                        Process process = null;
+
+                                        // Include a timeout
+                                        var task = Task.Run(() =>
+                                        {
+                                            isCallWindow = IsCallWindow(childTitle, childWindow, out process, out nullHandle, out elements);
+                                        });
+                                        bool _ = task.Wait(TimeSpan.FromMilliseconds(3000));
+
+                                        var ph = new ProcessAndHandle
                                         {
                                             ValidProcess = teamsProcess,
-                                            ValidHandle = childWindow,
-                                            WindowTitle = childTitle,
-                                            IsCallWindow = IsCallWindow(childTitle, out bool nullHandle, out List<AutomationElement> elements, out bool blackPixel),
-                                            BlackPixel = blackPixel,
+                                            Handle = teamsProcess.MainWindowHandle,
+                                            WindowTitle = title,
+                                            IsCallWindow = isCallWindow,
                                             Elements = elements,
-                                            NullHandle = nullHandle,
-                                            IterationIndex = _iterationIndex
-                                        });
-                                        _iterationIndex++;
+                                            NullHandle = nullHandle
+                                        };
+
+                                        RecentProcessAndHandle.Add(ph);
+                                        if (!HandleCache.Any(m => m.Handle == teamsProcess.MainWindowHandle))
+                                            HandleCache.Add(ph);
                                     }
                                 }
-                            }
+                            });
                         }
-                    }
+                    });
 
                     break;
                 }
@@ -245,97 +325,92 @@ namespace Keypad4Teams
             }
         }
 
-        private bool IsWindowMinimised(IntPtr handle)
-        {
-            if (handle != IntPtr.Zero)
-            {
-                WINDOWPLACEMENT placement = new WINDOWPLACEMENT();
-                GetWindowPlacement(handle, ref placement);
-                switch (placement.showCmd)
-                {
-                    case 2:
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-        private bool IsCallWindow(string windowName, out bool nullHandle, out List<AutomationElement> elements, out bool blackPixel)
+        private bool IsCallWindow(string windowName, IntPtr handle, out Process process, out bool nullHandle, out List<AutomationElement> elements)
         {
             nullHandle = false;
             elements = new List<AutomationElement>();
-            blackPixel = false;
+            process = null;
 
-            try
+            if (HandleCache.Any(m => m.Handle == handle))
             {
-                using (var automation = new UIA3Automation())
+                var ph = HandleCache.Where(m => m.Handle == handle).FirstOrDefault();
+                elements = ph.Elements;
+                process = ph.ValidProcess;
+                nullHandle = ph.NullHandle;
+
+                return ph.IsCallWindow;
+            }
+            else
+            {
+                try
                 {
-                    try
+                    using (var automation = new UIA3Automation())
                     {
-                        var desktop = automation.GetDesktop();
-                        var parent = desktop.FindFirstChild(c => c.ByName(windowName));
-
-                        if (parent == null)
+                        try
                         {
-                            nullHandle = true;
-                            return false;
-                        }
+                            var desktop = automation.GetDesktop();
+                            var children = desktop.FindAllChildren(c => c.ByName(windowName));
+                            var child = children.Where(m => m.Properties.NativeWindowHandle == handle).FirstOrDefault();
 
-                        if (_altHandler == IntPtr.Zero)
-                        {
-                            try
+                            if (child == null)
                             {
-                                if (parent != null && parent.AutomationId == null)
-                                    _altHandler = parent.Properties.NativeWindowHandle;
+                                nullHandle = true;
+                                return false;
                             }
-                            catch
+
+                            process = Process.GetProcessById(child.Properties.ProcessId);
+
+                            if (_altHandler == IntPtr.Zero)
                             {
                                 try
                                 {
-                                    if (parent != null && parent.Properties != null && parent.Properties.NativeWindowHandle != null)
-                                        _altHandler = parent.Properties.NativeWindowHandle;
+                                    if (child != null && child.AutomationId == null)
+                                        _altHandler = child.Properties.NativeWindowHandle;
+                                }
+                                catch
+                                {
+                                    try
+                                    {
+                                        if (child != null && child.Properties != null && child.Properties.NativeWindowHandle != null)
+                                            _altHandler = child.Properties.NativeWindowHandle;
+                                    }
+                                    catch { }
+                                }
+                            }
+
+                            List<AutomationElement> elementsList = null;
+                            GetAllElementsRecurisve(child, ref elementsList);
+                            elements = elementsList;
+
+                            for (int i = 0; i < elements.Count; i++)
+                            {
+                                try
+                                {
+                                    if (elements[i].AutomationId == "prejoin-devicesettings-button" ||
+                                        elements[i].AutomationId == "prejoin-devicesettings-button" ||
+                                        elements[i].AutomationId == "prejoin-join-button" ||
+                                        elements[i].Name == "Microphone" ||
+                                        elements[i].Name == "ComputerAudio" ||
+                                        elements[i].Name == "Open device settings" ||
+                                        elements[i].AutomationId == "hangup-button" ||
+                                        elements[i].Name == "Leave" ||
+                                        elements[i].Name == "video options" ||
+                                        elements[i].Name == "Leave" ||
+                                        elements[i].AutomationId == "microphone-button" ||
+                                        elements[i].Name == "Mute" ||
+                                        elements[i].AutomationId == "video-button" ||
+                                        elements[i].Name == "Turn Camera On" ||
+                                        elements[i].Name == "Turn Camera Off")
+                                        return true;
                                 }
                                 catch { }
                             }
                         }
-
-                        try
-                        {
-                            var bmp = parent.Capture();
-                            var pixelColor = bmp.GetPixel(1, 1);
-
-                            if (pixelColor.R <= 22 && pixelColor.G <= 22 && pixelColor.B <= 22)
-                                blackPixel = true;
-
-                            bmp.Dispose();
-                        }
                         catch { }
-
-                        List<AutomationElement> elementsList = null;
-                        GetAllElementsRecurisve(parent, ref elementsList);
-                        elements = elementsList;
-
-                        for (int i = 0; i < elements.Count; i++)
-                        {
-                            try
-                            {
-                                if (elements[i].AutomationId == "hangup-button" ||
-                                    elements[i].Name == "Leave" ||
-                                    elements[i].AutomationId == "microphone-button" ||
-                                    elements[i].Name == "Mute" ||
-                                    elements[i].AutomationId == "video-button" ||
-                                    elements[i].Name == "Turn Camera On" ||
-                                    elements[i].Name == "Turn Camera Off")
-                                    return true;
-                            }
-                            catch { }
-                        }
                     }
-                    catch { }
                 }
+                catch { }
             }
-            catch { }
 
             return false;
         }
@@ -344,9 +419,9 @@ namespace Keypad4Teams
         {
             return new ProcessAndHandle
             {
-                ValidProcess = _processAndHandlerList.FirstOrDefault().ValidProcess,
-                WindowTitle = _processAndHandlerList.FirstOrDefault().WindowTitle,
-                ValidHandle = _altHandler
+                ValidProcess = RecentProcessAndHandle.FirstOrDefault().ValidProcess,
+                WindowTitle = RecentProcessAndHandle.FirstOrDefault().WindowTitle,
+                Handle = _altHandler
             };
         }
 
@@ -354,11 +429,8 @@ namespace Keypad4Teams
         {
             // Use a points system to try and 'guess' the call Window
 
-            foreach (var ph in _processAndHandlerList)
+            foreach (var ph in RecentProcessAndHandle)
             {
-                if (ph.BlackPixel)
-                    ph.Points++;
-
                 if (ph.Elements.Count >= 2)
                 {
                     int hasValCount = 0;
@@ -388,14 +460,14 @@ namespace Keypad4Teams
 
             int max = -99;
 
-            foreach (var ph in _processAndHandlerList)
+            foreach (var ph in RecentProcessAndHandle)
             {
                 if (ph.Points > max)
                     max = ph.Points;
             }
 
             int maxCount = 0;
-            foreach (var ph in _processAndHandlerList)
+            foreach (var ph in RecentProcessAndHandle)
             {
                 if (ph.Points == max)
                     maxCount++;
@@ -403,14 +475,14 @@ namespace Keypad4Teams
 
             if (maxCount == 1)
             {
-                return _processAndHandlerList.OrderByDescending(m => m.Points)
+                return RecentProcessAndHandle.OrderByDescending(m => m.Points)
                                              .ThenBy(m => m.NullHandle)
                                              .FirstOrDefault();
             }
             else
             {
                 var rand = new Random();
-                var possibles = _processAndHandlerList.Where(m => m.Points == maxCount).ToList();
+                var possibles = RecentProcessAndHandle.Where(m => m.Points == maxCount).ToList();
                 int toSkip = rand.Next(0, possibles.Count);
 
                 return possibles.Skip(toSkip).Take(1).First();
@@ -437,7 +509,15 @@ namespace Keypad4Teams
 
                     try
                     {
-                        if (element.AutomationId == "hangup-button" ||
+                        if (element.AutomationId == "prejoin-devicesettings-button" ||
+                            element.AutomationId == "prejoin-devicesettings-button" ||
+                            element.AutomationId == "prejoin-join-button" ||
+                            element.Name == "Microphone" ||
+                            element.Name == "ComputerAudio" ||
+                            element.Name == "Open device settings" ||
+                            element.AutomationId == "hangup-button" ||
+                            element.Name == "Leave" ||
+                            element.Name == "video options" ||
                             element.Name == "Leave" ||
                             element.AutomationId == "microphone-button" ||
                             element.Name == "Mute" ||
@@ -454,14 +534,6 @@ namespace Keypad4Teams
                 if (count > 50)
                     return;
             }
-        }
-
-        public static string GetWindowTitle(IntPtr hWnd)
-        {
-            var length = GetWindowTextLength(hWnd) + 1;
-            var title = new StringBuilder(length);
-            GetWindowText(hWnd, title, length);
-            return title.ToString();
         }
 
         private void OnKeyPressed(object sender, GlobalKeyboardHookEventArgs e)
@@ -495,16 +567,30 @@ namespace Keypad4Teams
         {
             get
             {
-                CreateParams cp = base.CreateParams;
-                // turn on WS_EX_TOOLWINDOW style bit
+                var cp = base.CreateParams;
                 cp.ExStyle |= 0x80;
                 return cp;
             }
         }
 
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Dispose();
+        }
+
         public new void Dispose()
         {
-            _globalKeyboardHook?.Dispose();
+            try
+            {
+                DeregisterShellHookWindow(Handle);
+            }
+            catch { }
+
+            try
+            {
+                _globalKeyboardHook?.Dispose();
+            }
+            catch { }
         }
     }
 }

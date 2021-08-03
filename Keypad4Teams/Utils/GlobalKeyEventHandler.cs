@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace Keypad4Teams
 {
-    internal class GlobalKeyboardHookEventArgs : HandledEventArgs
+    public class GlobalKeyboardHookEventArgs : HandledEventArgs
     {
         public GlobalKeyboardHook.KeyboardState KeyboardState { get; private set; }
         public GlobalKeyboardHook.LowLevelKeyboardInputEvent KeyboardData { get; private set; }
@@ -22,7 +22,7 @@ namespace Keypad4Teams
     }
 
     //Based on https://gist.github.com/Stasonix
-    internal class GlobalKeyboardHook : IDisposable
+    public class GlobalKeyboardHook : IDisposable
     {
         public event EventHandler<GlobalKeyboardHookEventArgs> KeyboardPressed;
 
@@ -195,11 +195,11 @@ namespace Keypad4Teams
         {
             bool fEatKeyStroke = false;
 
-            var wparamTyped = wParam.ToInt32();
+            int wparamTyped = wParam.ToInt32();
             if (Enum.IsDefined(typeof(KeyboardState), wparamTyped))
             {
                 object o = Marshal.PtrToStructure(lParam, typeof(LowLevelKeyboardInputEvent));
-                LowLevelKeyboardInputEvent p = (LowLevelKeyboardInputEvent)o;
+                var p = (LowLevelKeyboardInputEvent)o;
 
                 var eventArguments = new GlobalKeyboardHookEventArgs(p, (KeyboardState)wparamTyped);
 
@@ -209,7 +209,7 @@ namespace Keypad4Teams
                 var key = (Keys)p.VirtualCode;
                 if (RegisteredKeys == null || RegisteredKeys.Contains(key))
                 {
-                    EventHandler<GlobalKeyboardHookEventArgs> handler = KeyboardPressed;
+                    var handler = KeyboardPressed;
                     handler?.Invoke(this, eventArguments);
 
                     fEatKeyStroke = eventArguments.Handled;

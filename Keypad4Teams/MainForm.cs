@@ -177,12 +177,6 @@ namespace Keypad4Teams
                     {
                         try
                         {
-                            SetForegroundWindow(selectedProcessAndHandle.Handle);
-                        }
-                        catch { }
-
-                        try
-                        {
                             if (IsWindowMinimised(selectedProcessAndHandle.Handle))
                                 ShowWindowAsync(selectedProcessAndHandle.Handle, SW_RESTORE);
                         }
@@ -221,6 +215,40 @@ namespace Keypad4Teams
                             SetForegroundWindow(selectedProcessAndHandle.Handle);
                         }
                         catch { }
+
+                        try
+                        {
+                            SetForegroundWindow(selectedProcessAndHandle.Handle);
+                        }
+                        catch { }
+
+                        new Thread((ThreadStart)delegate
+                        {
+                            Thread.Sleep(100);
+
+                            try
+                            {
+                                SetForegroundWindow(selectedProcessAndHandle.Handle);
+                            }
+                            catch { }
+
+                            Thread.Sleep(250);
+
+                            try
+                            {
+                                SetForegroundWindow(selectedProcessAndHandle.Handle);
+                            }
+                            catch { }
+
+                            Thread.Sleep(500);
+
+                            try
+                            {
+                                SetForegroundWindow(selectedProcessAndHandle.Handle);
+                            }
+                            catch { }
+
+                        }).Start();
                     }
                 }
             }
@@ -401,7 +429,9 @@ namespace Keypad4Teams
                                         elements[i].AutomationId == "video-button" ||
                                         elements[i].Name == "Turn Camera On" ||
                                         elements[i].Name == "Turn Camera Off")
+                                    {
                                         return true;
+                                    }
                                 }
                                 catch { }
                             }
@@ -542,6 +572,7 @@ namespace Keypad4Teams
                  (e.KeyboardData.Key == Keys.D0 || e.KeyboardData.Key == Keys.NumPad0 ||
                   e.KeyboardData.VirtualCode == 96 || e.KeyboardData.VirtualCode == 48))
             {
+
                 FocusTeams();
             }
         }

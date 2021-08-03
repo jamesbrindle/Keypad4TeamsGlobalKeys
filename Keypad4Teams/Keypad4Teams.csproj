@@ -95,6 +95,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Objects\ProcessAndHandle.cs" />
     <Compile Include="Utils\GlobalKeyEventHandler.cs" />
     <Compile Include="MainForm.cs">

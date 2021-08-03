@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 
 namespace Keypad4Teams
 {
@@ -14,6 +15,9 @@ namespace Keypad4Teams
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool BringWindowToTop(IntPtr hWnd);
 
         [DllImport("user32.dll")]
         public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
@@ -51,6 +55,32 @@ namespace Keypad4Teams
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        // When you don't want the ProcessId, use this overload and pass 
+        // IntPtr.Zero for the second parameter
+        [DllImport("user32.dll")]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd,
+            IntPtr ProcessId);
+
+        [DllImport("kernel32.dll")]
+        public static extern uint GetCurrentThreadId();
+
+        /// The GetForegroundWindow function returns a handle to the 
+        /// foreground window.
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        public static extern bool AttachThreadInput(uint idAttach,
+            uint idAttachTo, bool fAttach);
+
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool BringWindowToTop(HandleRef hWnd);
+
 
         #endregion
 
@@ -108,6 +138,127 @@ namespace Keypad4Teams
             return false;
         }
 
+        public static void AggressiveSetForgroundWindow(IntPtr handle, out bool complete)
+        {
+            bool localComplete = false;
+
+            try
+            {
+                SetForegroundWindow(handle);
+            }
+            catch { }
+
+            try
+            {
+                BringWindowToTop(handle);
+            }
+            catch { }
+
+            try
+            {
+                if (IsWindowMinimised(handle))
+                    ShowWindowAsync(handle, SW_RESTORE);
+            }
+            catch { }
+
+            try
+            {
+                if (IsWindowMinimised(handle))
+                    ShowWindow(handle, SW_RESTORE_HEX);
+            }
+            catch { }
+
+            try
+            {
+                if (IsWindowMinimised(handle))
+                    ShowWindowAsync(handle, SW_RESTORE);
+            }
+            catch { }
+
+            try
+            {
+                if (IsWindowMinimised(handle))
+                    ShowWindow(handle, SW_RESTORE_HEX);
+            }
+            catch { }
+
+            try
+            {
+                if (IsWindowMinimised(handle))
+                    SendMessage(handle, WM_SYSCOMMAND, SC_RESTORE, 0);
+            }
+            catch { }
+
+            try
+            {
+                SetForegroundWindow(handle);
+            }
+            catch { }
+
+            try
+            {
+                BringWindowToTop(handle);
+            }
+            catch { }
+
+            try
+            {
+                FocusWindow(handle);
+            }
+            catch { }
+
+            new Thread((ThreadStart)delegate
+            {
+                for (int i = 0; i < 8; i++)
+                {
+                    try
+                    {
+                        SetForegroundWindow(handle);
+                    }
+                    catch { }
+
+                    try
+                    {
+                        BringWindowToTop(handle);
+                    }                                                                                     
+                    catch { }
+
+                    SafeThreading.SafeSleep(100);
+                }
+
+                localComplete = true;
+            }).Start();
+
+            int it = 0;
+            while (!localComplete && it < 50)
+            {
+                SafeThreading.SafeSleep(50);
+                it++;
+            }
+
+            complete = true;
+        }
+
+        private static void FocusWindow(IntPtr handle)
+        {
+            uint currentlyFocusedWindowProcessId = GetWindowThreadProcessId(GetForegroundWindow(), IntPtr.Zero);
+            uint appThread = GetCurrentThreadId();
+
+            if (currentlyFocusedWindowProcessId != appThread)
+            {
+                AttachThreadInput(currentlyFocusedWindowProcessId, appThread, true);
+                BringWindowToTop(handle);
+                AttachThreadInput(currentlyFocusedWindowProcessId, appThread, false);
+                SetForegroundWindow(handle);
+            }
+
+            else
+            {
+                BringWindowToTop(handle);
+                SetForegroundWindow(handle);
+            }
+        }
+
         public class ChildWindowHandler
         {
             private delegate bool EnumWindowProc(IntPtr hwnd, IntPtr lParam);
@@ -157,7 +308,6 @@ namespace Keypad4Teams
 
                 return true;
             }
-           
         }
     }
 }

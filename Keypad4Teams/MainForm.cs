@@ -65,19 +65,29 @@ namespace Keypad4Teams
                 case ShellEvents.HSHELL_WINDOWCREATED:
                     new Thread((ThreadStart)delegate
                     {
-                        Thread.Sleep(500);
+                        SafeThreading.SafeSleep(500);
+                        string windowTitle = GetWindowTitle(handle);
+
+                        int it = 0;
+                        while (windowTitle == "Teams" && it < 50)
+                        {
+                            SafeThreading.SafeSleep(100);
+                            windowTitle = GetWindowTitle(handle);
+                            it++;
+                        }
+
                         try
                         {
                             if (!HandleCache.Any(m => m.Handle == handle))
                             {
-                                string windowTitle = GetWindowTitle(handle);
+                               
                                 if (windowTitle != null && windowTitle.Length > 0 && !windowTitle.ToLower().Contains("call in progress"))
                                 {
                                     HandleCache.Add(new ProcessAndHandle
                                     {
                                         Handle = handle,
                                         WindowTitle = windowTitle,
-                                        IsCallWindow = IsCallWindow(windowTitle, handle, out Process process, out bool nullHandle, out List<AutomationElement> elements),
+                                        IsCallWindow = IsCallWindow(windowTitle, handle, out var process, out bool nullHandle, out var elements),
                                         NullHandle = nullHandle,
                                         Elements = elements,
                                         ValidProcess = process
@@ -164,80 +174,14 @@ namespace Keypad4Teams
                                                                          .FirstOrDefault();
                     if (selectedProcessAndHandle != null)
                     {
-                        try
+                        AggressiveSetForgroundWindow(selectedProcessAndHandle.Handle, out bool complete);
+
+                        int it = 0;
+                        while (!complete && it < 50)
                         {
-                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
-                                ShowWindowAsync(selectedProcessAndHandle.Handle, SW_RESTORE);
+                            SafeThreading.SafeSleep(50);
+                            it++;
                         }
-                        catch { }
-
-                        try
-                        {
-                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
-                                ShowWindow(selectedProcessAndHandle.Handle, SW_RESTORE_HEX);
-                        }
-                        catch { }
-
-                        try
-                        {
-                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
-                                ShowWindowAsync(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE);
-                        }
-                        catch { }
-
-                        try
-                        {
-                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
-                                ShowWindow(selectedProcessAndHandle.ValidProcess.Handle, SW_RESTORE_HEX);
-                        }
-                        catch { }
-
-                        try
-                        {
-                            if (IsWindowMinimised(selectedProcessAndHandle.Handle))
-                                SendMessage(selectedProcessAndHandle.Handle, WM_SYSCOMMAND, SC_RESTORE, 0);
-                        }
-                        catch { }
-
-                        try
-                        {
-                            SetForegroundWindow(selectedProcessAndHandle.Handle);
-                        }
-                        catch { }
-
-                        try
-                        {
-                            SetForegroundWindow(selectedProcessAndHandle.Handle);
-                        }
-                        catch { }
-
-                        new Thread((ThreadStart)delegate
-                        {
-                            Thread.Sleep(100);
-
-                            try
-                            {
-                                SetForegroundWindow(selectedProcessAndHandle.Handle);
-                            }
-                            catch { }
-
-                            Thread.Sleep(250);
-
-                            try
-                            {
-                                SetForegroundWindow(selectedProcessAndHandle.Handle);
-                            }
-                            catch { }
-
-                            Thread.Sleep(500);
-
-                            try
-                            {
-                                SetForegroundWindow(selectedProcessAndHandle.Handle);
-                            }
-                            catch { }
-
-                        }).Start();
                     }
                 }
             }
@@ -269,7 +213,7 @@ namespace Keypad4Teams
                                     ValidProcess = teamsProcess,
                                     Handle = teamsProcess.MainWindowHandle,
                                     WindowTitle = title,
-                                    IsCallWindow = IsCallWindow(title, teamsProcess.MainWindowHandle, out Process process, out bool nullHandle, out List<AutomationElement> elements),
+                                    IsCallWindow = IsCallWindow(title, teamsProcess.MainWindowHandle, out var process, out bool nullHandle, out var elements),
                                     Elements = elements,
                                     NullHandle = nullHandle
                                 };
@@ -296,7 +240,7 @@ namespace Keypad4Teams
                                             ValidProcess = teamsProcess,
                                             Handle = childWindow,
                                             WindowTitle = title,
-                                            IsCallWindow = IsCallWindow(title, childWindow, out Process process, out bool nullHandle, out List<AutomationElement> elements),
+                                            IsCallWindow = IsCallWindow(title, childWindow, out var process, out bool nullHandle, out var elements),
                                             Elements = elements,
                                             NullHandle = nullHandle
                                         };

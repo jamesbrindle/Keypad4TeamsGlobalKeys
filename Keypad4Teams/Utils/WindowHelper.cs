@@ -81,7 +81,6 @@ namespace Keypad4Teams
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool BringWindowToTop(HandleRef hWnd);
 
-
         #endregion
 
         public struct WINDOWPLACEMENT
@@ -138,9 +137,9 @@ namespace Keypad4Teams
             return false;
         }
 
-        public static void AggressiveSetForgroundWindow(IntPtr handle, out bool complete)
+        public static void AggressiveSetForgroundWindow(IntPtr handle)
         {
-            bool localComplete = false;
+            bool complete = false;
 
             try
             {
@@ -226,17 +225,15 @@ namespace Keypad4Teams
                     SafeThreading.SafeSleep(100);
                 }
 
-                localComplete = true;
+                complete = true;
             }).Start();
 
             int it = 0;
-            while (!localComplete && it < 50)
+            while (!complete && it < 50)
             {
                 SafeThreading.SafeSleep(50);
                 it++;
             }
-
-            complete = true;
         }
 
         private static void FocusWindow(IntPtr handle)

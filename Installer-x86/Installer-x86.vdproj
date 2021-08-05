@@ -527,15 +527,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Keypad4Teams"
-        "ProductCode" = "8:{010102E7-15C6-4FED-8B00-DD3503F4458C}"
-        "PackageCode" = "8:{B5C1D1D4-5C10-4B63-94D5-A0F001016B85}"
+        "ProductCode" = "8:{1EE43F9F-7AB7-4B83-AE18-0377FF538967}"
+        "PackageCode" = "8:{D778D4BD-90EA-4FF2-857B-82E0D536DA3B}"
         "UpgradeCode" = "8:{DEE97EA1-65AE-4CEB-AB33-9FFD0A0E1E42}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.0.1"
         "Manufacturer" = "8:JB-Net Software Solutions"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:https://github.com/jamesbrindle/Keypad4TeamsGlobalKeys"
@@ -937,7 +937,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B54D2F7037A64706AAA562D49174DA2D"
             {
-            "SourcePath" = "8:..\\Keypad4Teams\\obj\\Release\\Keypad4Teams.exe"
+            "SourcePath" = "8:"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_ACD51A56270D466C8A841B62780932C6"

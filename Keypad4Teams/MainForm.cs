@@ -13,8 +13,7 @@ using static Keypad4Teams.WindowHelper;
 namespace Keypad4Teams
 {
     public partial class MainForm : Form
-    {
-        private GlobalKeyboardHook _globalKeyboardHook;
+    {   
         private NotifyIcon _trayIcon;
         private IntPtr _altHandler = IntPtr.Zero;
 
@@ -22,24 +21,25 @@ namespace Keypad4Teams
         public delegate void EventHandler(object sender, int action, IntPtr handle);
 
         public event EventHandler WindowEvent;
+        private GlobalKeyboardHook GlobalKeyboardHook { get; set; }
         private List<ProcessAndHandle> RecentProcessAndHandle { get; set; }
         public List<ProcessAndHandle> HandleCache { get; set; } = new List<ProcessAndHandle>();
+        private System.Windows.Forms.Timer CheckCacheTimer { get; set; } = new System.Windows.Forms.Timer();
 
         public MainForm()
         {
             InitializeComponent();
 
-            _globalKeyboardHook = new GlobalKeyboardHook(new Keys[] { Keys.NumPad0, Keys.D0, Keys.Alt });
-            _globalKeyboardHook.KeyboardPressed += OnKeyPressed;
+            GlobalKeyboardHook = new GlobalKeyboardHook(new Keys[] { Keys.NumPad0, Keys.D0, Keys.Alt });
+            GlobalKeyboardHook.KeyboardPressed += OnKeyPressed;
 
             SetStartWithWindows();
 
             ShowInTaskbar = false;
             FormBorderStyle = FormBorderStyle.None;
+            WindowState = FormWindowState.Minimized;
             Opacity = 0;
             Hide();
-
-            WindowState = FormWindowState.Minimized;
 
             _trayIcon = new NotifyIcon()
             {
@@ -55,10 +55,14 @@ namespace Keypad4Teams
             _msgNotify = RegisterWindowMessage("SHELLHOOK");
             RegisterShellHookWindow(Handle);
 
-            WindowEvent += WindowsEventHandler;
+            WindowEvent += WindowEventHandler;
+
+            CheckCacheTimer.Interval = 20000; // 20 seconds
+            CheckCacheTimer.Tick += new System.EventHandler(CheckCacheTimer_Tick);
+            CheckCacheTimer.Start();
         }
 
-        public void WindowsEventHandler(object sender, int action, IntPtr handle)
+        public void WindowEventHandler(object sender, int action, IntPtr handle)
         {
             switch ((ShellEvents)action)
             {
@@ -79,8 +83,7 @@ namespace Keypad4Teams
                         try
                         {
                             if (!HandleCache.Any(m => m.Handle == handle))
-                            {
-                               
+                            {                               
                                 if (windowTitle != null && windowTitle.Length > 0 && !windowTitle.ToLower().Contains("call in progress"))
                                 {
                                     HandleCache.Add(new ProcessAndHandle
@@ -108,6 +111,22 @@ namespace Keypad4Teams
             }
         }
 
+        protected virtual void OnWindowEvent(int action, IntPtr handle)
+        {
+            var handler = WindowEvent;
+            if (handler != null)
+                handler(this, action, handle);
+        }
+
+        private void OnKeyPressed(object sender, GlobalKeyboardHookEventArgs e)
+        {
+            if (e.KeyboardState == GlobalKeyboardHook.KeyboardState.SysKeyDown &&
+                 (e.KeyboardData.Key == Keys.D0 || e.KeyboardData.Key == Keys.NumPad0 ||
+                  e.KeyboardData.VirtualCode == 96 || e.KeyboardData.VirtualCode == 48))
+            {
+                FocusTeams();
+            }
+        }
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == _msgNotify)
@@ -129,11 +148,27 @@ namespace Keypad4Teams
             base.WndProc(ref m);
         }
 
-        protected virtual void OnWindowEvent(int action, IntPtr handle)
+        private void CheckCacheTimer_Tick(object sender, EventArgs e)
         {
-            var handler = WindowEvent;
-            if (handler != null)
-                handler(this, action, handle);
+            try
+            {
+                var removeList = new List<ProcessAndHandle>();
+                foreach (var ph in HandleCache)
+                {
+                    if (!IsWindow(ph.Handle))
+                        removeList.Add(ph);
+                }
+
+                foreach (var ph in removeList)
+                {
+                    try
+                    {
+                        HandleCache.RemoveAll(m => m.Handle == ph.Handle);
+                    }
+                    catch { }
+                }
+            }
+            catch { }
         }
 
         private void FocusTeams()
@@ -161,7 +196,6 @@ namespace Keypad4Teams
                 if (RecentProcessAndHandle != null && RecentProcessAndHandle.Count > 0)
                 {
                     ProcessAndHandle selectedProcessAndHandle = null;
-
                     if (RecentProcessAndHandle.Count(m => m.IsCallWindow) > 1)
                         selectedProcessAndHandle = SelectHandleWhenTwoWindowsReportIsCall();
 
@@ -173,16 +207,7 @@ namespace Keypad4Teams
                                                                          .ThenBy(p => p.NullHandle)
                                                                          .FirstOrDefault();
                     if (selectedProcessAndHandle != null)
-                    {
-                        AggressiveSetForgroundWindow(selectedProcessAndHandle.Handle, out bool complete);
-
-                        int it = 0;
-                        while (!complete && it < 50)
-                        {
-                            SafeThreading.SafeSleep(50);
-                            it++;
-                        }
-                    }
+                        AggressiveSetForgroundWindow(selectedProcessAndHandle.Handle);
                 }
             }
             catch { }
@@ -260,7 +285,12 @@ namespace Keypad4Teams
             }
         }
 
-        private bool IsCallWindow(string windowName, IntPtr handle, out Process process, out bool nullHandle, out List<AutomationElement> elements)
+        private bool IsCallWindow(
+            string windowName, 
+            IntPtr handle, 
+            out Process process, 
+            out bool nullHandle, 
+            out List<AutomationElement> elements)
         {
             nullHandle = false;
             elements = new List<AutomationElement>();
@@ -294,7 +324,6 @@ namespace Keypad4Teams
                             }
 
                             process = Process.GetProcessById(child.Properties.ProcessId);
-
                             if (_altHandler == IntPtr.Zero)
                             {
                                 try
@@ -396,7 +425,6 @@ namespace Keypad4Teams
             }
 
             int max = -99;
-
             foreach (var ph in RecentProcessAndHandle)
             {
                 if (ph.Points > max)
@@ -426,7 +454,10 @@ namespace Keypad4Teams
             }
         }
 
-        private void GetAllElementsRecurisve(AutomationElement parent, ref List<AutomationElement> elements, int count = 0)
+        private void GetAllElementsRecurisve(
+            AutomationElement parent,
+            ref List<AutomationElement> elements,
+            int count = 0)
         {
             if (elements == null)
                 elements = new List<AutomationElement>();
@@ -473,17 +504,6 @@ namespace Keypad4Teams
             }
         }
 
-        private void OnKeyPressed(object sender, GlobalKeyboardHookEventArgs e)
-        {
-            if (e.KeyboardState == GlobalKeyboardHook.KeyboardState.SysKeyDown &&
-                 (e.KeyboardData.Key == Keys.D0 || e.KeyboardData.Key == Keys.NumPad0 ||
-                  e.KeyboardData.VirtualCode == 96 || e.KeyboardData.VirtualCode == 48))
-            {
-
-                FocusTeams();
-            }
-        }
-
         public void SetStartWithWindows()
         {
             try
@@ -520,13 +540,19 @@ namespace Keypad4Teams
         {
             try
             {
+                CheckCacheTimer.Stop();
+            }
+            catch { }
+
+            try
+            {
                 DeregisterShellHookWindow(Handle);
             }
             catch { }
 
             try
             {
-                _globalKeyboardHook?.Dispose();
+                GlobalKeyboardHook?.Dispose();
             }
             catch { }
         }

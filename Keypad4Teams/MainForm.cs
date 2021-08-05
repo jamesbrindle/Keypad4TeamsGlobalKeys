@@ -351,7 +351,6 @@ namespace Keypad4Teams
                                 try
                                 {
                                     if (elements[i].AutomationId == "prejoin-devicesettings-button" ||
-                                        elements[i].AutomationId == "prejoin-devicesettings-button" ||
                                         elements[i].AutomationId == "prejoin-join-button" ||
                                         elements[i].Name == "Microphone" ||
                                         elements[i].Name == "ComputerAudio" ||
@@ -478,7 +477,6 @@ namespace Keypad4Teams
                     try
                     {
                         if (element.AutomationId == "prejoin-devicesettings-button" ||
-                            element.AutomationId == "prejoin-devicesettings-button" ||
                             element.AutomationId == "prejoin-join-button" ||
                             element.Name == "Microphone" ||
                             element.Name == "ComputerAudio" ||

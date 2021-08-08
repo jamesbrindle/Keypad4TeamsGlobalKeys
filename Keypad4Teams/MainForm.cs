@@ -13,7 +13,7 @@ using static Keypad4Teams.WindowHelper;
 namespace Keypad4Teams
 {
     public partial class MainForm : Form
-    {   
+    {
         private NotifyIcon _trayIcon;
         private IntPtr _altHandler = IntPtr.Zero;
 
@@ -83,7 +83,7 @@ namespace Keypad4Teams
                         try
                         {
                             if (!HandleCache.Any(m => m.Handle == handle))
-                            {                               
+                            {
                                 if (windowTitle != null && windowTitle.Length > 0 && !windowTitle.ToLower().Contains("call in progress"))
                                 {
                                     HandleCache.Add(new ProcessAndHandle
@@ -120,6 +120,7 @@ namespace Keypad4Teams
 
         private void OnKeyPressed(object sender, GlobalKeyboardHookEventArgs e)
         {
+            // Alt + 0 (above p 0, numpad 0 or virtual keyboard 0)
             if (e.KeyboardState == GlobalKeyboardHook.KeyboardState.SysKeyDown &&
                  (e.KeyboardData.Key == Keys.D0 || e.KeyboardData.Key == Keys.NumPad0 ||
                   e.KeyboardData.VirtualCode == 96 || e.KeyboardData.VirtualCode == 48))
@@ -175,39 +176,44 @@ namespace Keypad4Teams
         {
             try
             {
-                bool isCachedValid = false;
-                if (HandleCache.Count(m => m.IsCallWindow) == 1)
+                bool hasCachedCallWindow = false;               
+                if (HandleCache != null)
                 {
-                    var cph = HandleCache.Where(m => m.IsCallWindow).FirstOrDefault();
-                    if (IsWindow(cph.Handle))
+                    var handlesToRemove = new List<ProcessAndHandle>();
+                    foreach (var cph in HandleCache.Where(m => m.IsCallWindow))
                     {
-                        RecentProcessAndHandle = new List<ProcessAndHandle>
+                        if (IsWindow(cph.Handle))
                         {
-                            cph
-                        };
-
-                        isCachedValid = true;
+                            hasCachedCallWindow = true;
+                            AggressiveSetForgroundWindow(cph.Handle);
+                        }
+                        else
+                            handlesToRemove.Add(cph);
                     }
+
+                    foreach (var cph in handlesToRemove)
+                        HandleCache.RemoveAll(m => m.Handle == cph.Handle);
                 }
 
-                if (!isCachedValid)
-                    GatherPotentialTeamsWindows();
-
-                if (RecentProcessAndHandle != null && RecentProcessAndHandle.Count > 0)
+                if (!hasCachedCallWindow)
                 {
-                    ProcessAndHandle selectedProcessAndHandle = null;
-                    if (RecentProcessAndHandle.Count(m => m.IsCallWindow) > 1)
-                        selectedProcessAndHandle = SelectHandleWhenTwoWindowsReportIsCall();
+                    GatherPotentialTeamsWindows();
+                    if (RecentProcessAndHandle != null && RecentProcessAndHandle.Count > 0)
+                    {
+                        ProcessAndHandle selectedProcessAndHandle = null;
+                        if (RecentProcessAndHandle.Count(m => m.IsCallWindow) > 1)
+                            selectedProcessAndHandle = SelectHandleWhenTwoWindowsReportIsCall();
 
-                    else if (RecentProcessAndHandle.Count(m => !m.IsCallWindow) == RecentProcessAndHandle.Count)
-                        selectedProcessAndHandle = SelectHandleWhenNoWindowsReportIsCall();
+                        else if (RecentProcessAndHandle.Count(m => !m.IsCallWindow) == RecentProcessAndHandle.Count)
+                            selectedProcessAndHandle = SelectHandleWhenNoWindowsReportIsCall();
 
-                    else
-                        selectedProcessAndHandle = RecentProcessAndHandle.OrderByDescending(p => p.IsCallWindow)
-                                                                         .ThenBy(p => p.NullHandle)
-                                                                         .FirstOrDefault();
-                    if (selectedProcessAndHandle != null)
-                        AggressiveSetForgroundWindow(selectedProcessAndHandle.Handle);
+                        else
+                            selectedProcessAndHandle = RecentProcessAndHandle.OrderByDescending(p => p.IsCallWindow)
+                                                                             .ThenBy(p => p.NullHandle)
+                                                                             .FirstOrDefault();
+                        if (selectedProcessAndHandle != null)
+                            AggressiveSetForgroundWindow(selectedProcessAndHandle.Handle);
+                    }
                 }
             }
             catch { }
@@ -286,10 +292,10 @@ namespace Keypad4Teams
         }
 
         private bool IsCallWindow(
-            string windowName, 
-            IntPtr handle, 
-            out Process process, 
-            out bool nullHandle, 
+            string windowName,
+            IntPtr handle,
+            out Process process,
+            out bool nullHandle,
             out List<AutomationElement> elements)
         {
             nullHandle = false;

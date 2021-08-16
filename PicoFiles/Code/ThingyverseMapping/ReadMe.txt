@@ -10,8 +10,10 @@ To install: Copy the 'WindowsInstaller.zip' file to your computer and extract it
 Enjoy!
 
 
-# Code_ThingyVerseMapping.py
+# Code - Thingyverse Mapping
 
 This uses the original key mapping from the files on: https://www.thingiverse.com/thing:4883188
 
-The original key mapping didn't work for me, however, someone requested thge code.py with the original mapping.
+The original key mapping didn't work for me, however, someone requested the code.py file with the original mapping... So it's here...
+
+The different... The original key mapping start from GP14. The new key mapping start from GP10.

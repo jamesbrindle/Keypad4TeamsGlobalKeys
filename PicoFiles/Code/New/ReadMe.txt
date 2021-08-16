@@ -8,10 +8,3 @@ This program is a Window handler, and will bring the Teams call window to the fr
 To install: Copy the 'WindowsInstaller.zip' file to your computer and extract it. Then run the 'Setup.exe'.. Done!
 
 Enjoy!
-
-
-# Code_ThingyVerseMapping.py
-
-This uses the original key mapping from the files on: https://www.thingiverse.com/thing:4883188
-
-The original key mapping didn't work for me, however, someone requested thge code.py with the original mapping.

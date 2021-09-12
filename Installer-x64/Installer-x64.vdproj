@@ -22,7 +22,7 @@
         "Entry"
         {
         "MsmKey" = "8:_060A0FE27E7BB08AD60880514F19D8AB"
-        "OwnerKey" = "8:_7DB397894F4FEF2DF91F887A5DE7E09D"
+        "OwnerKey" = "8:_DD0C471034116C189727B41E28CD24F4"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -33,8 +33,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_6BBD8935CAD5F909FD283D373FC6ADF4"
-        "OwnerKey" = "8:_6D7687848F51475A83D2B767CB898938"
+        "MsmKey" = "8:_337AF04E2A3F4ACA9440FC21499A77D7"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -52,36 +52,12 @@
         "Entry"
         {
         "MsmKey" = "8:_77410DF52647C17E3402555937AFB909"
-        "OwnerKey" = "8:_7DB397894F4FEF2DF91F887A5DE7E09D"
+        "OwnerKey" = "8:_DD0C471034116C189727B41E28CD24F4"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_7B28F1F5469A48059BD8B2D270CACC7A"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7DB397894F4FEF2DF91F887A5DE7E09D"
-        "OwnerKey" = "8:_6D7687848F51475A83D2B767CB898938"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7DB397894F4FEF2DF91F887A5DE7E09D"
-        "OwnerKey" = "8:_6BBD8935CAD5F909FD283D373FC6ADF4"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_9ABC9502AC57CE5A4FAFFD832E0DBBD7"
-        "OwnerKey" = "8:_6BBD8935CAD5F909FD283D373FC6ADF4"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_9ABC9502AC57CE5A4FAFFD832E0DBBD7"
+        "MsmKey" = "8:_C39FD7A3CF1D963B3363BD84BF142295"
         "OwnerKey" = "8:_6D7687848F51475A83D2B767CB898938"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -93,6 +69,30 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_D2D409463F793C586C70E2344296608D"
+        "OwnerKey" = "8:_C39FD7A3CF1D963B3363BD84BF142295"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D2D409463F793C586C70E2344296608D"
+        "OwnerKey" = "8:_6D7687848F51475A83D2B767CB898938"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_DD0C471034116C189727B41E28CD24F4"
+        "OwnerKey" = "8:_6D7687848F51475A83D2B767CB898938"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_DD0C471034116C189727B41E28CD24F4"
+        "OwnerKey" = "8:_C39FD7A3CF1D963B3363BD84BF142295"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_6D7687848F51475A83D2B767CB898938"
         "MsmSig" = "8:_UNDEFINED"
@@ -100,19 +100,19 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_6BBD8935CAD5F909FD283D373FC6ADF4"
+        "OwnerKey" = "8:_C39FD7A3CF1D963B3363BD84BF142295"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_9ABC9502AC57CE5A4FAFFD832E0DBBD7"
+        "OwnerKey" = "8:_D2D409463F793C586C70E2344296608D"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_7DB397894F4FEF2DF91F887A5DE7E09D"
+        "OwnerKey" = "8:_DD0C471034116C189727B41E28CD24F4"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -296,21 +296,10 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_6BBD8935CAD5F909FD283D373FC6ADF4"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_337AF04E2A3F4ACA9440FC21499A77D7"
             {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:FlaUI.UIA3, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_6BBD8935CAD5F909FD283D373FC6ADF4"
-                    {
-                    "Name" = "8:FlaUI.UIA3.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:FlaUI.UIA3.dll"
-            "TargetName" = "8:"
+            "SourcePath" = "8:..\\Keypad4Teams\\favicon.ico"
+            "TargetName" = "8:favicon.ico"
             "Tag" = "8:"
             "Folder" = "8:_A34597C5B3BE4E088D420C104837036C"
             "Condition" = "8:"
@@ -324,7 +313,7 @@
             "PackageAs" = "3:1"
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
+            "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_77410DF52647C17E3402555937AFB909"
@@ -358,71 +347,20 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7B28F1F5469A48059BD8B2D270CACC7A"
-            {
-            "SourcePath" = "8:..\\Keypad4Teams\\favicon.ico"
-            "TargetName" = "8:favicon.ico"
-            "Tag" = "8:"
-            "Folder" = "8:_A34597C5B3BE4E088D420C104837036C"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_7DB397894F4FEF2DF91F887A5DE7E09D"
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_C39FD7A3CF1D963B3363BD84BF142295"
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:FlaUI.Core, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:FlaUI.UIA3, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_7DB397894F4FEF2DF91F887A5DE7E09D"
+                    "_C39FD7A3CF1D963B3363BD84BF142295"
                     {
-                    "Name" = "8:FlaUI.Core.dll"
+                    "Name" = "8:FlaUI.UIA3.dll"
                     "Attributes" = "3:512"
                     }
                 }
-            "SourcePath" = "8:FlaUI.Core.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_A34597C5B3BE4E088D420C104837036C"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:TRUE"
-            "IsolateTo" = "8:"
-            }
-            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_9ABC9502AC57CE5A4FAFFD832E0DBBD7"
-            {
-            "AssemblyRegister" = "3:1"
-            "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Interop.UIAutomationClient, Version=10.0.18362.0, Culture=neutral, processorArchitecture=MSIL"
-                "ScatterAssemblies"
-                {
-                    "_9ABC9502AC57CE5A4FAFFD832E0DBBD7"
-                    {
-                    "Name" = "8:Interop.UIAutomationClient.dll"
-                    "Attributes" = "3:512"
-                    }
-                }
-            "SourcePath" = "8:Interop.UIAutomationClient.dll"
+            "SourcePath" = "8:FlaUI.UIA3.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_A34597C5B3BE4E088D420C104837036C"
@@ -454,6 +392,68 @@
                     }
                 }
             "SourcePath" = "8:System.IO.Compression.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_A34597C5B3BE4E088D420C104837036C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_D2D409463F793C586C70E2344296608D"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:Interop.UIAutomationClient, Version=10.0.18362.0, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_D2D409463F793C586C70E2344296608D"
+                    {
+                    "Name" = "8:Interop.UIAutomationClient.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:Interop.UIAutomationClient.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_A34597C5B3BE4E088D420C104837036C"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_DD0C471034116C189727B41E28CD24F4"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:FlaUI.Core, Version=3.2.0.0, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_DD0C471034116C189727B41E28CD24F4"
+                    {
+                    "Name" = "8:FlaUI.Core.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:FlaUI.Core.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_A34597C5B3BE4E088D420C104837036C"
@@ -545,7 +545,7 @@
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:Program to register Teams Keypad shortcuts globally."
         "ARPURLINFOABOUT" = "8:https://github.com/jamesbrindle"
-        "ARPPRODUCTICON" = "8:_7B28F1F5469A48059BD8B2D270CACC7A"
+        "ARPPRODUCTICON" = "8:_337AF04E2A3F4ACA9440FC21499A77D7"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -659,7 +659,7 @@
             "Target" = "8:_6D7687848F51475A83D2B767CB898938"
             "Folder" = "8:_D9191686BD1C4261A6DB3909D3C923F9"
             "WorkingFolder" = "8:_A34597C5B3BE4E088D420C104837036C"
-            "Icon" = "8:_7B28F1F5469A48059BD8B2D270CACC7A"
+            "Icon" = "8:_337AF04E2A3F4ACA9440FC21499A77D7"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_B8C0403303D543A7ACA48E6BBEBE207C"
@@ -673,7 +673,7 @@
             "Target" = "8:_6D7687848F51475A83D2B767CB898938"
             "Folder" = "8:_F061E43908AF43338E7A7697AE4D0B35"
             "WorkingFolder" = "8:_A34597C5B3BE4E088D420C104837036C"
-            "Icon" = "8:_7B28F1F5469A48059BD8B2D270CACC7A"
+            "Icon" = "8:_337AF04E2A3F4ACA9440FC21499A77D7"
             "Feature" = "8:"
             }
         }

@@ -17,6 +17,8 @@ When Alt + 0 is handled, it will look for the relevant Teams window and bring it
 
 ## Setup
 
+[Download Installer](https://github.com/jamesbrindle/Keypad4TeamsGlobalKeys/releases)
+
 The installer will install to the Program Files folder and set the program to start on Windows statup. It can be exited from the right-click context menu on the icon in the system tray.
 
 There are 3 types of installer:

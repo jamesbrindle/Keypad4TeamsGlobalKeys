@@ -176,7 +176,7 @@ namespace Keypad4Teams
         {
             try
             {
-                bool hasCachedCallWindow = false;               
+                bool hasCachedCallWindow = false;
                 if (HandleCache != null)
                 {
                     var handlesToRemove = new List<ProcessAndHandle>();
@@ -227,7 +227,8 @@ namespace Keypad4Teams
             {
                 try
                 {
-                    var teamsProcesses = Process.GetProcessesByName("Teams");
+                    var teamsProcesses = Process.GetProcessesByName("Teams").ToList();
+                    teamsProcesses.AddRange(Process.GetProcessesByName("ms-teams"));
                     var validTeamsHandles = new List<IntPtr>();
                     RecentProcessAndHandle = new List<ProcessAndHandle>();
 
@@ -356,23 +357,8 @@ namespace Keypad4Teams
                             {
                                 try
                                 {
-                                    if (elements[i].AutomationId == "prejoin-devicesettings-button" ||
-                                        elements[i].AutomationId == "prejoin-join-button" ||
-                                        elements[i].Name == "Microphone" ||
-                                        elements[i].Name == "ComputerAudio" ||
-                                        elements[i].Name == "Open device settings" ||
-                                        elements[i].AutomationId == "hangup-button" ||
-                                        elements[i].Name == "Leave" ||
-                                        elements[i].Name == "video options" ||
-                                        elements[i].Name == "Leave" ||
-                                        elements[i].AutomationId == "microphone-button" ||
-                                        elements[i].Name == "Mute" ||
-                                        elements[i].AutomationId == "video-button" ||
-                                        elements[i].Name == "Turn Camera On" ||
-                                        elements[i].Name == "Turn Camera Off")
-                                    {
+                                    if (IsElementTeams(elements[i]))
                                         return true;
-                                    }
                                 }
                                 catch { }
                             }
@@ -396,7 +382,7 @@ namespace Keypad4Teams
             };
         }
 
-        private ProcessAndHandle SelectHandleWhenNoWindowsReportIsCall()
+        private ProcessAndHandle SelectHandleWhenNoWindowsReportIsCall(bool skipCallCheck = false)
         {
             // Use a points system to try and 'guess' the call Window
 
@@ -422,7 +408,7 @@ namespace Keypad4Teams
                 if (ph.Elements.Count == 2 || (ph.Elements.Count >= 6 && ph.Elements.Count <= 7))
                     ph.Points++;
 
-                if (ph.Elements.Count > 30)
+                if (!skipCallCheck && ph.Elements.Count > 30)
                     ph.Points--;
 
                 if (ph.Elements.Count == 0)
@@ -451,11 +437,22 @@ namespace Keypad4Teams
             }
             else
             {
-                var rand = new Random();
-                var possibles = RecentProcessAndHandle.Where(m => m.Points == maxCount).ToList();
-                int toSkip = rand.Next(0, possibles.Count);
+                if (!skipCallCheck)
+                {
+                    var rand = new Random();
+                    var possibles = RecentProcessAndHandle.Where(m => m.Points == maxCount).ToList();
+                    int toSkip = rand.Next(0, possibles.Count);
 
-                return possibles.Skip(toSkip).Take(1).First();
+                    try
+                    {
+                        return possibles.Skip(toSkip).Take(1).First();
+                    }
+                    catch { }
+                }
+
+                return RecentProcessAndHandle.OrderByDescending(m => m.Points)
+                                             .ThenBy(m => m.NullHandle)
+                                             .FirstOrDefault();
             }
         }
 
@@ -482,20 +479,7 @@ namespace Keypad4Teams
 
                     try
                     {
-                        if (element.AutomationId == "prejoin-devicesettings-button" ||
-                            element.AutomationId == "prejoin-join-button" ||
-                            element.Name == "Microphone" ||
-                            element.Name == "ComputerAudio" ||
-                            element.Name == "Open device settings" ||
-                            element.AutomationId == "hangup-button" ||
-                            element.Name == "Leave" ||
-                            element.Name == "video options" ||
-                            element.Name == "Leave" ||
-                            element.AutomationId == "microphone-button" ||
-                            element.Name == "Mute" ||
-                            element.AutomationId == "video-button" ||
-                            element.Name == "Turn Camera On" ||
-                            element.Name == "Turn Camera Off")
+                        if (IsElementTeams(element))
                             break;
                     }
                     catch { }
@@ -506,6 +490,29 @@ namespace Keypad4Teams
                 if (count > 50)
                     return;
             }
+        }
+
+        private bool IsElementTeams(AutomationElement element)
+        {
+            return
+                element.AutomationId == "prejoin-devicesettings-button" ||
+                element.AutomationId == "prejoin-join-button" ||
+                element.Name == "Microphone" ||
+                element.Name == "ComputerAudio" ||
+                element.Name == "Open device settings" ||
+                element.AutomationId == "hangup-button" ||
+                element.Name == "Leave" ||
+                element.Name == "video options" ||
+                element.Name == "Leave" ||
+                element.Name == "ellapsed time" ||
+                element.Name == "Meeting controls" ||
+                element.Name == "Calling indicators" ||
+                element.Name == "start-breakout-room-button" ||
+                element.AutomationId == "microphone-button" ||
+                element.Name == "Mute" ||
+                element.AutomationId == "video-button" ||
+                element.Name == "Turn Camera On" ||
+                element.Name == "Turn Camera Off";
         }
 
         public void SetStartWithWindows()

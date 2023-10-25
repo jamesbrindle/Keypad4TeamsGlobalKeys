@@ -6,3 +6,4 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Style", "IDE1005:Delegate invocation can be simplified.", Justification = "<Pending>", Scope = "member", Target = "~M:Keypad4Teams.MainForm.OnWindowEvent(System.Int32,System.IntPtr)")]
+[assembly: SuppressMessage("Style", "IDE0044:Add readonly modifier", Justification = "<Pending>", Scope = "member", Target = "~F:Keypad4Teams.MainForm._trayIcon")]
